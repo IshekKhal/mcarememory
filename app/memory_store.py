@@ -293,3 +293,8 @@ def get_caregiver_notes(conversation_id: str) -> list[dict]:
             return notes
 
 
+# Alias for backward compatibility and benchmarking
+search_similar_notes = recall_relevant_notes
+
+
+

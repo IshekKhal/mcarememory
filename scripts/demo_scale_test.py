@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # Ensure app module is in path when running script directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.memory_store import create_conversation, add_caregiver_note, search_similar_notes, get_connection
+from app.memory_store import create_conversation, add_caregiver_note, recall_relevant_notes, get_connection
 from app.coordinator_agent import answer_caregiver_question, format_human_timestamp
 
 # Caregiver names and note categories
@@ -194,7 +194,7 @@ def run_scale_verification():
 
         # Time raw CockroachDB pgvector similarity search SQL
         t_sql_start = time.perf_counter()
-        similar_notes = search_similar_notes(conversation_id=test_cid, query_text=bq["question"], k=5)
+        similar_notes = recall_relevant_notes(conversation_id=test_cid, question=bq["question"], k=5)
         t_sql_elapsed_ms = (time.perf_counter() - t_sql_start) * 1000.0
 
         # Time full end-to-end agent synthesis (embedding + pgvector + Claude Haiku 4.5 LLM)
