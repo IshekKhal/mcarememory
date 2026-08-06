@@ -1,0 +1,19 @@
+# Environment variables & secrets
+.env
+
+# Python cache & virtual environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+
+# Endpoint & active session state
+sagemaker_endpoint.txt
+active_conversation.id
+
+# OS metadata
+.DS_Store
+Thumbs.db

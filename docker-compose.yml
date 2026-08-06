@@ -1,0 +1,42 @@
+services:
+  roach1:
+    container_name: roach1
+    hostname: roach1
+    image: cockroachdb/cockroach:v25.2.0
+    command: start --insecure --store=node1 --listen-addr=0.0.0.0:26257 --advertise-addr=roach1:26257 --http-addr=0.0.0.0:8080 --join=roach1:26257,roach2:26257,roach3:26257
+    ports:
+      - "26257:26257"
+      - "8080:8080"
+    volumes:
+      - roach1_data:/cockroach/cockroach-data
+    networks:
+      - roachnet
+
+  roach2:
+    container_name: roach2
+    hostname: roach2
+    image: cockroachdb/cockroach:v25.2.0
+    command: start --insecure --store=node2 --listen-addr=0.0.0.0:26257 --advertise-addr=roach2:26257 --http-addr=0.0.0.0:8080 --join=roach1:26257,roach2:26257,roach3:26257
+    volumes:
+      - roach2_data:/cockroach/cockroach-data
+    networks:
+      - roachnet
+
+  roach3:
+    container_name: roach3
+    hostname: roach3
+    image: cockroachdb/cockroach:v25.2.0
+    command: start --insecure --store=node3 --listen-addr=0.0.0.0:26257 --advertise-addr=roach3:26257 --http-addr=0.0.0.0:8080 --join=roach1:26257,roach2:26257,roach3:26257
+    volumes:
+      - roach3_data:/cockroach/cockroach-data
+    networks:
+      - roachnet
+
+networks:
+  roachnet:
+    driver: bridge
+
+volumes:
+  roach1_data:
+  roach2_data:
+  roach3_data:
