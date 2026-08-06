@@ -37,7 +37,7 @@ def execute_query(conversation_id: str, question: str, k: int = 3):
         print(f"Error executing recall query: {e}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Demo script for semantic recall of caregiver notes via Bedrock Titan V2 & CockroachDB vector search.")
+    parser = argparse.ArgumentParser(description="Demo script for semantic recall of caregiver notes via SageMaker BGE & CockroachDB vector search.")
     parser.add_argument("question", nargs="?", type=str, help="Question to search for semantically relevant caregiver notes.")
     parser.add_argument("--conversation-id", "--cid", type=str, help="Target conversation ID UUID string.")
     parser.add_argument("-k", type=int, default=3, help="Number of top matches to return (default: 3).")

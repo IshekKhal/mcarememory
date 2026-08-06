@@ -70,8 +70,8 @@ def seed_demo_data():
         f.write(conversation_id)
     print(f"   Saved active conversation ID to '{id_filepath}'")
     
-    # 3. Ingest caregiver notes and generate real Titan V2 embeddings
-    print(f"\n2. Ingesting {len(SAMPLE_NOTES)} caregiver notes & computing Bedrock Titan V2 embeddings...")
+    # 3. Ingest caregiver notes and generate real SageMaker BGE embeddings
+    print(f"\n2. Ingesting {len(SAMPLE_NOTES)} caregiver notes & computing SageMaker BGE-large-en-v1.5 embeddings...")
     for i, note in enumerate(SAMPLE_NOTES, start=1):
         print(f"   [{i}/{len(SAMPLE_NOTES)}] Inserting note from {note['caregiver_name']} ({note['note_type']})...")
         msg_id = add_caregiver_note(

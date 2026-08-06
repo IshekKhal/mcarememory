@@ -100,4 +100,61 @@ To run full automated verification (schema migration, index inspection, relation
 bash schema/verify_schema.sh
 ```
 
+---
+
+# Milestone 4: Caregiver Memory Semantic Recall & SageMaker Embedding Pivot
+
+Milestone 4 connects the autonomous agent's memory store to a real vector embedding model, storing high-dimensional embeddings for caregiver notes in CockroachDB and performing semantic similarity recall using cosine distance (`<=>`).
+
+## Architecture & SageMaker Embedding Model
+
+To bypass Bedrock account quota defects, embedding generation is powered by a SageMaker JumpStart hosted **BAAI/bge-large-en-v1.5** model (`huggingface-sentencesimilarity-bge-large-en-v1-5`).
+
+- **Vector Dimension**: 1024 float dimensions (exact match for CockroachDB `VECTOR(1024)` column).
+- **Hosting**: SageMaker Endpoint on CPU instance (`ml.m5.xlarge`).
+- **Endpoint State File**: The endpoint deployment script saves the active endpoint name to `sagemaker_endpoint.txt`, which `app/config.py` and `app/embeddings.py` automatically detect.
+
+---
+
+## ⚠️ CRITICAL WARNING: SAGEMAKER HOURLY BILLING
+
+> [!WARNING]
+> **SageMaker Endpoints Cost Money by the Hour**: Leaving a SageMaker endpoint running incurs ongoing hourly charges on your AWS account. **Always run `python scripts/teardown_embedding_endpoint.py` immediately when you finish testing or demoing.**
+
+---
+
+## Execution Order
+
+Follow this exact sequence to run the demo:
+
+### 1. Deploy SageMaker Embedding Endpoint
+Deploy the `bge-large-en-v1.5` model to SageMaker JumpStart:
+```bash
+python scripts/deploy_embedding_endpoint.py
+```
+*Wait for the script to confirm the endpoint status is **InService**.*
+
+### 2. Seed Caregiver Memory Data
+Ingest 9 realistic caregiver notes for "Grandma Chen", compute their 1024-dim BGE embeddings via SageMaker, and persist them in CockroachDB:
+```bash
+python scripts/demo_seed.py
+```
+
+### 3. Run Semantic Query Recall Tests
+Execute semantic vector search queries against CockroachDB:
+```bash
+# Run standard 3-question evaluation suite (medication, mood/anxiety, appointment)
+python scripts/demo_query.py
+
+# Or search with a custom query:
+python scripts/demo_query.py "has Grandma Chen complained of physical pain?"
+```
+
+### 4. Teardown Endpoint (MANDATORY)
+Delete the SageMaker endpoint and endpoint configuration to stop billing:
+```bash
+python scripts/teardown_embedding_endpoint.py
+```
+*Verify that `sagemaker_endpoint.txt` is removed and no endpoints remain active in SageMaker.*
+
 

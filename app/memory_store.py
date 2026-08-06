@@ -40,7 +40,7 @@ def add_caregiver_note(
     note_type: str = "general"
 ) -> str:
     """
-    Inserts a caregiver's note into the messages table, computes a Bedrock Titan V2
+    Inserts a caregiver's note into the messages table, computes a 1024-dim vector
     embedding for the content, and stores the vector in memory_embeddings.
     
     Args:
@@ -57,7 +57,7 @@ def add_caregiver_note(
     if not caregiver_name or not caregiver_name.strip():
         raise ValueError("Caregiver name cannot be empty.")
 
-    # 1. Generate real embedding via Bedrock Titan V2
+    # 1. Generate real embedding via SageMaker BGE-large-en-v1.5
     embedding_vector = generate_embedding(content)
     embedding_str = f"[{','.join(str(f) for f in embedding_vector)}]"
 

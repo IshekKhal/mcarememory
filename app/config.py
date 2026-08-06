@@ -10,15 +10,32 @@ COCKROACH_URL = os.getenv(
     "postgresql://root@localhost:26257/agent_memory?sslmode=disable"
 )
 
-# AWS Bedrock configuration
+# AWS configuration
 AWS_REGION = os.getenv(
     "AWS_REGION",
     os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 )
 
-BEDROCK_MODEL_ID = os.getenv(
-    "BEDROCK_MODEL_ID",
-    "amazon.titan-embed-text-v2:0"
-)
+def get_sagemaker_endpoint_name() -> str:
+    """
+    Returns the SageMaker endpoint name.
+    1. Checks SAGEMAKER_ENDPOINT_NAME env var.
+    2. Checks local sagemaker_endpoint.txt file.
+    3. Defaults to 'bge-large-en-v1-5-endpoint'.
+    """
+    env_name = os.getenv("SAGEMAKER_ENDPOINT_NAME")
+    if env_name and env_name.strip():
+        return env_name.strip()
+        
+    endpoint_file = os.path.join(os.path.dirname(__file__), "..", "sagemaker_endpoint.txt")
+    if os.path.exists(endpoint_file):
+        with open(endpoint_file, "r") as f:
+            val = f.read().strip()
+            if val:
+                return val
+                
+    return "bge-large-en-v1-5-endpoint"
+
+SAGEMAKER_ENDPOINT_NAME = get_sagemaker_endpoint_name()
 
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1024"))

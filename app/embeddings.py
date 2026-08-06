@@ -3,23 +3,23 @@ import logging
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError, NoCredentialsError, EndpointConnectionError, BotoCoreError
-from app.config import AWS_REGION, BEDROCK_MODEL_ID, EMBEDDING_DIMENSION
+from app.config import AWS_REGION, EMBEDDING_DIMENSION, get_sagemaker_endpoint_name
 
 logger = logging.getLogger(__name__)
 
-def get_bedrock_client():
-    """Returns a boto3 bedrock-runtime client configured with app region and defensive retry backoff."""
+def get_sagemaker_runtime_client():
+    """Returns a boto3 sagemaker-runtime client configured with app region."""
     config = Config(
         retries={
-            "max_attempts": 8,
+            "max_attempts": 5,
             "mode": "standard"
         }
     )
-    return boto3.client("bedrock-runtime", region_name=AWS_REGION, config=config)
+    return boto3.client("sagemaker-runtime", region_name=AWS_REGION, config=config)
 
 def generate_embedding(text: str) -> list[float]:
     """
-    Generates a 1024-dimensional embedding vector for input text using Amazon Titan Text Embeddings V2.
+    Generates a 1024-dimensional embedding vector for input text using SageMaker-hosted BGE-large-en-v1.5.
     
     Args:
         text (str): The note or text string to embed.
@@ -29,39 +29,57 @@ def generate_embedding(text: str) -> list[float]:
 
     Raises:
         ValueError: If text is empty or invalid.
-        RuntimeError: If Bedrock API invocation fails (bad credentials, region error, throttling, etc.).
+        RuntimeError: If SageMaker endpoint invocation fails (bad credentials, region error, non-existent endpoint, etc.).
     """
     if not text or not text.strip():
         raise ValueError("Input text for embedding cannot be empty or whitespace.")
 
     clean_text = text.strip()
+    endpoint_name = get_sagemaker_endpoint_name()
     
     payload = {
-        "inputText": clean_text,
-        "dimensions": EMBEDDING_DIMENSION,
-        "normalize": True
+        "inputs": clean_text
     }
     
     try:
-        client = get_bedrock_client()
-        response = client.invoke_model(
-            modelId=BEDROCK_MODEL_ID,
-            contentType="application/json",
-            accept="application/json",
-            body=json.dumps(payload)
+        client = get_sagemaker_runtime_client()
+        response = client.invoke_endpoint(
+            EndpointName=endpoint_name,
+            ContentType="application/json",
+            Accept="application/json",
+            Body=json.dumps(payload)
         )
         
-        response_body = json.loads(response["body"].read().decode("utf-8"))
+        raw_body = response["Body"].read().decode("utf-8")
+        response_data = json.loads(raw_body)
         
-        if "embedding" not in response_body:
-            raise RuntimeError(f"Unexpected response structure from Bedrock Titan V2 API: missing 'embedding' key. Keys: {list(response_body.keys())}")
+        # Parse vector from various response formats (HuggingFace TEI / standard DLC pipeline)
+        embedding = None
+        if isinstance(response_data, list):
+            if len(response_data) > 0 and isinstance(response_data[0], list):
+                # Format: [[0.1, 0.2, ...]]
+                embedding = response_data[0]
+            elif len(response_data) > 0 and isinstance(response_data[0], (float, int)):
+                # Format: [0.1, 0.2, ...]
+                embedding = response_data
+        elif isinstance(response_data, dict):
+            # Check common keys: 'embedding', 'vectors', 'predictions'
+            for key in ["embedding", "vectors", "predictions"]:
+                if key in response_data:
+                    val = response_data[key]
+                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
+                        embedding = val[0]
+                    elif isinstance(val, list):
+                        embedding = val
+                    break
+
+        if embedding is None:
+            raise RuntimeError(f"Could not parse embedding vector from SageMaker response. Raw output structure: {type(response_data)}")
             
-        embedding = response_body["embedding"]
-        
         if len(embedding) != EMBEDDING_DIMENSION:
             raise RuntimeError(f"Expected embedding dimension of {EMBEDDING_DIMENSION}, but received {len(embedding)} dimensions.")
             
-        return embedding
+        return [float(x) for x in embedding]
 
     except NoCredentialsError as e:
         err_msg = (
@@ -73,8 +91,8 @@ def generate_embedding(text: str) -> list[float]:
 
     except EndpointConnectionError as e:
         err_msg = (
-            f"Could not connect to Bedrock endpoint in region '{AWS_REGION}'. "
-            "Please check network connectivity or confirm that Titan V2 is available in this AWS region."
+            f"Could not connect to SageMaker endpoint '{endpoint_name}' in region '{AWS_REGION}'. "
+            "Please check network connectivity or confirm the endpoint region."
         )
         logger.error(err_msg)
         raise RuntimeError(err_msg) from e
@@ -83,26 +101,25 @@ def generate_embedding(text: str) -> list[float]:
         error_code = e.response.get("Error", {}).get("Code", "Unknown")
         error_msg = e.response.get("Error", {}).get("Message", str(e))
         
-        if error_code == "AccessDeniedException":
-            msg = f"Access denied to Bedrock model '{BEDROCK_MODEL_ID}'. Ensure your AWS account has model access granted in region '{AWS_REGION}'."
-        elif error_code == "ResourceNotFoundException":
-            msg = f"Bedrock model '{BEDROCK_MODEL_ID}' not found in region '{AWS_REGION}'. Verify model ID and region configuration."
-        elif error_code == "ThrottlingException":
-            msg = f"Bedrock API rate limit / throttling exceeded for model '{BEDROCK_MODEL_ID}'."
-        elif error_code == "ValidationException":
-            msg = f"Validation error invoking Bedrock model '{BEDROCK_MODEL_ID}': {error_msg}"
+        if error_code == "ValidationError" or "Could not resolve" in error_msg:
+            msg = f"SageMaker endpoint '{endpoint_name}' not found or not in 'InService' state in region '{AWS_REGION}'. Please deploy the endpoint first using scripts/deploy_embedding_endpoint.py."
+        elif error_code == "AccessDeniedException":
+            msg = f"Access denied invoking SageMaker endpoint '{endpoint_name}'. Ensure your IAM role/user has 'sagemaker:InvokeEndpoint' permissions."
+        elif error_code == "ModelError":
+            msg = f"SageMaker model error during inference on endpoint '{endpoint_name}': {error_msg}"
         else:
-            msg = f"Bedrock ClientError [{error_code}]: {error_msg}"
+            msg = f"SageMaker ClientError [{error_code}]: {error_msg}"
             
         logger.error(msg)
         raise RuntimeError(msg) from e
 
     except BotoCoreError as e:
-        err_msg = f"BotoCore error invoking Bedrock embeddings: {e}"
+        err_msg = f"BotoCore error invoking SageMaker endpoint '{endpoint_name}': {e}"
         logger.error(err_msg)
         raise RuntimeError(err_msg) from e
 
     except Exception as e:
-        err_msg = f"Unexpected error during embedding generation: {e}"
+        err_msg = f"Unexpected error during embedding generation via SageMaker: {e}"
         logger.error(err_msg)
         raise RuntimeError(err_msg) from e
+
