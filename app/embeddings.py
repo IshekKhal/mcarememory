@@ -38,7 +38,8 @@ def generate_embedding(text: str) -> list[float]:
     endpoint_name = get_sagemaker_endpoint_name()
     
     payload = {
-        "inputs": clean_text
+        "text_inputs": [clean_text],
+        "mode": "embedding"
     }
     
     try:
@@ -53,17 +54,9 @@ def generate_embedding(text: str) -> list[float]:
         raw_body = response["Body"].read().decode("utf-8")
         response_data = json.loads(raw_body)
         
-        # Parse vector from various response formats (HuggingFace TEI / standard DLC pipeline)
+        # Parse vector from SageMaker response
         embedding = None
-        if isinstance(response_data, list):
-            if len(response_data) > 0 and isinstance(response_data[0], list):
-                # Format: [[0.1, 0.2, ...]]
-                embedding = response_data[0]
-            elif len(response_data) > 0 and isinstance(response_data[0], (float, int)):
-                # Format: [0.1, 0.2, ...]
-                embedding = response_data
-        elif isinstance(response_data, dict):
-            # Check common keys: 'embedding', 'vectors', 'predictions'
+        if isinstance(response_data, dict):
             for key in ["embedding", "vectors", "predictions"]:
                 if key in response_data:
                     val = response_data[key]
@@ -72,6 +65,11 @@ def generate_embedding(text: str) -> list[float]:
                     elif isinstance(val, list):
                         embedding = val
                     break
+        elif isinstance(response_data, list):
+            if len(response_data) > 0 and isinstance(response_data[0], list):
+                embedding = response_data[0]
+            elif len(response_data) > 0 and isinstance(response_data[0], (float, int)):
+                embedding = response_data
 
         if embedding is None:
             raise RuntimeError(f"Could not parse embedding vector from SageMaker response. Raw output structure: {type(response_data)}")

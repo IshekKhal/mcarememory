@@ -46,49 +46,31 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
     try:
         deployed_name = None
 
-        # 1. Try deployment via SageMaker v3 ModelBuilder
+        # 1. Deploy via SageMaker v3 ModelBuilder
+        from sagemaker.serve.model_builder import ModelBuilder
+        from sagemaker.core.jumpstart.configs import JumpStartConfig
         try:
-            from sagemaker.serve import ModelBuilder
-            print("\n[1/3] Initializing JumpStart model via SageMaker v3 ModelBuilder...")
-            builder_kwargs = {"model": MODEL_ID}
-            if role_arn:
-                builder_kwargs["role_arn"] = role_arn
-                
-            builder = ModelBuilder(**builder_kwargs)
-            model = builder.build()
-            
-            print(f"[2/3] Deploying SageMaker endpoint '{endpoint_name}' on instance '{instance_type}' (this may take 3-5 minutes)...")
-            deploy_kwargs = {"instance_type": instance_type, "endpoint_name": endpoint_name}
-            if role_arn:
-                deploy_kwargs["role"] = role_arn
-                
-            predictor = model.deploy(**deploy_kwargs)
-            deployed_name = getattr(predictor, "endpoint_name", endpoint_name)
-        except Exception as builder_err:
-            print(f"ModelBuilder deployment attempt ({builder_err}). Trying JumpStartModel legacy API...")
-            try:
-                from sagemaker.jumpstart.model import JumpStartModel
-                js_kwargs = {"model_id": MODEL_ID, "region": AWS_REGION}
-                if role_arn:
-                    js_kwargs["role"] = role_arn
-                model = JumpStartModel(**js_kwargs)
-                predictor = model.deploy(instance_type=instance_type, endpoint_name=endpoint_name, wait=True)
-                deployed_name = predictor.endpoint_name
-            except Exception as js_err:
-                print(f"JumpStartModel fallback ({js_err}). Checking boto3 SageMaker status...")
-                sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
-                try:
-                    ep_info = sm_client.describe_endpoint(EndpointName=endpoint_name)
-                    status = ep_info.get("EndpointStatus")
-                    print(f"Endpoint '{endpoint_name}' existing status: {status}")
-                    deployed_name = endpoint_name
-                except ClientError as ce:
-                    error_code = ce.response.get("Error", {}).get("Code", "Unknown")
-                    if error_code == "AccessDeniedException":
-                        print("\n[IAM PERMISSION ERROR] AWS user lacks SageMaker permissions.")
-                        print("Please attach policy 'AmazonSageMakerFullAccess' to your AWS IAM user/role.")
-                        raise ce
-                    raise RuntimeError(f"Failed deploying model '{MODEL_ID}': {builder_err}") from ce
+            from sagemaker.core.training.configs import Compute
+        except ImportError:
+            from sagemaker.train.configs import Compute
+
+        print("\n[1/3] Initializing JumpStart model via SageMaker v3 ModelBuilder...")
+        compute = Compute(instance_type=instance_type)
+        jumpstart_config = JumpStartConfig(model_id=MODEL_ID)
+
+        mb_kwargs = {
+            "jumpstart_config": jumpstart_config,
+            "compute": compute,
+        }
+        if role_arn:
+            mb_kwargs["role_arn"] = role_arn
+
+        model_builder = ModelBuilder.from_jumpstart_config(**mb_kwargs)
+        core_model = model_builder.build(model_name=f"{MODEL_ID}-model")
+
+        print(f"\n[2/3] Deploying SageMaker endpoint '{endpoint_name}' on instance '{instance_type}' (this may take 3-5 minutes)...")
+        endpoint = model_builder.deploy(endpoint_name=endpoint_name)
+        deployed_name = getattr(endpoint, "name", getattr(endpoint, "endpoint_name", endpoint_name))
 
         # 2. Wait for endpoint to reach InService status
         sm_client = boto3.client("sagemaker", region_name=AWS_REGION)

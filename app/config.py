@@ -39,3 +39,8 @@ def get_sagemaker_endpoint_name() -> str:
 SAGEMAKER_ENDPOINT_NAME = get_sagemaker_endpoint_name()
 
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1024"))
+
+# Anthropic Configuration
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+
