@@ -121,3 +121,63 @@ def generate_embedding(text: str) -> list[float]:
         logger.error(err_msg)
         raise RuntimeError(err_msg) from e
 
+
+def generate_embeddings_batch(texts: list[str], batch_size: int = 32) -> list[list[float]]:
+    """
+    Generates 1024-dimensional embedding vectors for a batch of input texts using SageMaker-hosted BGE-large-en-v1.5.
+    
+    Args:
+        texts (list[str]): List of note strings to embed.
+        batch_size (int): Max texts per SageMaker invocation chunk (default 32).
+        
+    Returns:
+        list[list[float]]: List of 1024-dim embedding float vectors matching the order of input texts.
+    """
+    if not texts:
+        return []
+
+    all_embeddings = []
+    endpoint_name = get_sagemaker_endpoint_name()
+    client = get_sagemaker_runtime_client()
+
+    for i in range(0, len(texts), batch_size):
+        chunk_raw = texts[i:i + batch_size]
+        chunk = [t.strip() if t and t.strip() else "general note" for t in chunk_raw]
+
+        payload = {
+            "text_inputs": chunk,
+            "mode": "embedding"
+        }
+
+        try:
+            response = client.invoke_endpoint(
+                EndpointName=endpoint_name,
+                ContentType="application/json",
+                Accept="application/json",
+                Body=json.dumps(payload)
+            )
+            raw_body = response["Body"].read().decode("utf-8")
+            response_data = json.loads(raw_body)
+
+            chunk_vectors = None
+            if isinstance(response_data, dict):
+                for key in ["embedding", "vectors", "predictions"]:
+                    if key in response_data:
+                        chunk_vectors = response_data[key]
+                        break
+            elif isinstance(response_data, list):
+                chunk_vectors = response_data
+
+            if isinstance(chunk_vectors, list) and len(chunk_vectors) == len(chunk):
+                all_embeddings.extend(chunk_vectors)
+            else:
+                for t in chunk:
+                    all_embeddings.append(generate_embedding(t))
+        except Exception as e:
+            logger.warning(f"Batch embedding invocation failed for chunk (size {len(chunk)}): {e}. Falling back to single requests.")
+            for t in chunk:
+                all_embeddings.append(generate_embedding(t))
+
+    return all_embeddings
+
+
