@@ -16,14 +16,22 @@ ENDPOINT_TXT_PATH = os.path.join(os.path.dirname(__file__), "..", "sagemaker_end
 
 def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DEFAULT_INSTANCE_TYPE, role_arn: str = None):
     """
-    Deploys the BAAI/bge-large-en-v1.5 embedding model to a SageMaker endpoint using JumpStart.
+    Deploys the BAAI/bge-large-en-v1.5 embedding model to a SageMaker endpoint using JumpStart / ModelBuilder.
     Saves the endpoint name to sagemaker_endpoint.txt upon completion.
     """
+    os.environ["AWS_DEFAULT_REGION"] = AWS_REGION
+
     if not endpoint_name:
         timestamp = int(time.time())
         endpoint_name = f"bge-large-en-v1-5-{timestamp}"
 
     role_arn = role_arn or os.getenv("SAGEMAKER_ROLE_ARN")
+    if not role_arn:
+        try:
+            from sagemaker.core.helper import IamRoleResolver
+            role_arn = IamRoleResolver().create_execution_role(role_type="serving")
+        except Exception:
+            pass
 
     print("=" * 70)
     print("Milestone 4: Deploying SageMaker Embedding Endpoint")
@@ -36,44 +44,51 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
     print("=" * 70)
 
     try:
-        # 1. Try deployment via SageMaker Python SDK JumpStartModel
+        deployed_name = None
+
+        # 1. Try deployment via SageMaker v3 ModelBuilder
         try:
-            from sagemaker.jumpstart.model import JumpStartModel
-            print("\n[1/3] Initializing JumpStartModel using SageMaker SDK...")
-            
-            kwargs = {"model_id": MODEL_ID, "region": AWS_REGION}
+            from sagemaker.serve import ModelBuilder
+            print("\n[1/3] Initializing JumpStart model via SageMaker v3 ModelBuilder...")
+            builder_kwargs = {"model": MODEL_ID}
             if role_arn:
-                kwargs["role"] = role_arn
+                builder_kwargs["role_arn"] = role_arn
                 
-            model = JumpStartModel(**kwargs)
-            print("[2/3] Triggering SageMaker endpoint deployment (this may take 3-5 minutes)...")
-            predictor = model.deploy(
-                instance_type=instance_type,
-                endpoint_name=endpoint_name,
-                wait=True
-            )
-            deployed_name = predictor.endpoint_name
-        except (ImportError, Exception) as sdk_err:
-            print(f"SageMaker SDK deployment fallback ({sdk_err}). Using boto3 SageMaker API...")
-            sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
+            builder = ModelBuilder(**builder_kwargs)
+            model = builder.build()
             
-            # Check if endpoint already exists
+            print(f"[2/3] Deploying SageMaker endpoint '{endpoint_name}' on instance '{instance_type}' (this may take 3-5 minutes)...")
+            deploy_kwargs = {"instance_type": instance_type, "endpoint_name": endpoint_name}
+            if role_arn:
+                deploy_kwargs["role"] = role_arn
+                
+            predictor = model.deploy(**deploy_kwargs)
+            deployed_name = getattr(predictor, "endpoint_name", endpoint_name)
+        except Exception as builder_err:
+            print(f"ModelBuilder deployment attempt ({builder_err}). Trying JumpStartModel legacy API...")
             try:
-                ep_info = sm_client.describe_endpoint(EndpointName=endpoint_name)
-                status = ep_info.get("EndpointStatus")
-                print(f"Endpoint '{endpoint_name}' already exists with status: {status}")
-                deployed_name = endpoint_name
-            except ClientError as ce:
-                error_code = ce.response.get("Error", {}).get("Code", "Unknown")
-                if error_code == "AccessDeniedException":
-                    print("\n[IAM PERMISSION ERROR] AWS user lacks SageMaker permissions.")
-                    print("Please ensure policy 'AmazonSageMakerFullAccess' is attached to your AWS IAM user/role.")
-                    raise ce
-                elif error_code == "ValidationException" or "Could not find" in str(ce):
-                    raise RuntimeError(
-                        f"Failed to deploy JumpStart model '{MODEL_ID}'. SageMaker SDK error: {sdk_err}"
-                    ) from ce
-                raise
+                from sagemaker.jumpstart.model import JumpStartModel
+                js_kwargs = {"model_id": MODEL_ID, "region": AWS_REGION}
+                if role_arn:
+                    js_kwargs["role"] = role_arn
+                model = JumpStartModel(**js_kwargs)
+                predictor = model.deploy(instance_type=instance_type, endpoint_name=endpoint_name, wait=True)
+                deployed_name = predictor.endpoint_name
+            except Exception as js_err:
+                print(f"JumpStartModel fallback ({js_err}). Checking boto3 SageMaker status...")
+                sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
+                try:
+                    ep_info = sm_client.describe_endpoint(EndpointName=endpoint_name)
+                    status = ep_info.get("EndpointStatus")
+                    print(f"Endpoint '{endpoint_name}' existing status: {status}")
+                    deployed_name = endpoint_name
+                except ClientError as ce:
+                    error_code = ce.response.get("Error", {}).get("Code", "Unknown")
+                    if error_code == "AccessDeniedException":
+                        print("\n[IAM PERMISSION ERROR] AWS user lacks SageMaker permissions.")
+                        print("Please attach policy 'AmazonSageMakerFullAccess' to your AWS IAM user/role.")
+                        raise ce
+                    raise RuntimeError(f"Failed deploying model '{MODEL_ID}': {builder_err}") from ce
 
         # 2. Wait for endpoint to reach InService status
         sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
@@ -124,4 +139,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
