@@ -21,7 +21,7 @@ def get_sagemaker_endpoint_name() -> str:
     Returns the SageMaker endpoint name.
     1. Checks SAGEMAKER_ENDPOINT_NAME env var.
     2. Checks local sagemaker_endpoint.txt file.
-    3. Defaults to 'bge-large-en-v1-5-endpoint'.
+    3. Defaults to 'caregiver-bge-embeddings'.
     """
     env_name = os.getenv("SAGEMAKER_ENDPOINT_NAME")
     if env_name and env_name.strip():
@@ -34,11 +34,12 @@ def get_sagemaker_endpoint_name() -> str:
             if val:
                 return val
                 
-    return "bge-large-en-v1-5-endpoint"
+    return "caregiver-bge-embeddings"
 
 SAGEMAKER_ENDPOINT_NAME = get_sagemaker_endpoint_name()
 
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1024"))
+EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "local").lower().strip()
 
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")

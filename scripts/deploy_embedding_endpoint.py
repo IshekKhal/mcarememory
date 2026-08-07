@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from app.config import AWS_REGION
 
+DEFAULT_ENDPOINT_NAME = "caregiver-bge-embeddings"
 MODEL_ID = "huggingface-sentencesimilarity-bge-large-en-v1-5"
 DEFAULT_INSTANCE_TYPE = "ml.m5.xlarge"
 ENDPOINT_TXT_PATH = os.path.join(os.path.dirname(__file__), "..", "sagemaker_endpoint.txt")
@@ -17,13 +18,13 @@ ENDPOINT_TXT_PATH = os.path.join(os.path.dirname(__file__), "..", "sagemaker_end
 def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DEFAULT_INSTANCE_TYPE, role_arn: str = None):
     """
     Deploys the BAAI/bge-large-en-v1.5 embedding model to a SageMaker endpoint using JumpStart / ModelBuilder.
+    If the endpoint already exists and is InService, reuses it without re-deploying.
     Saves the endpoint name to sagemaker_endpoint.txt upon completion.
     """
     os.environ["AWS_DEFAULT_REGION"] = AWS_REGION
 
-    if not endpoint_name:
-        timestamp = int(time.time())
-        endpoint_name = f"bge-large-en-v1-5-{timestamp}"
+    if not endpoint_name or not endpoint_name.strip():
+        endpoint_name = os.getenv("SAGEMAKER_ENDPOINT_NAME", DEFAULT_ENDPOINT_NAME).strip()
 
     role_arn = role_arn or os.getenv("SAGEMAKER_ROLE_ARN")
     if not role_arn:
@@ -42,6 +43,51 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
     if role_arn:
         print(f"  Role ARN:      {role_arn}")
     print("=" * 70)
+
+    sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
+
+    # Check if endpoint already exists and is InService
+    try:
+        ep_info = sm_client.describe_endpoint(EndpointName=endpoint_name)
+        status = ep_info.get("EndpointStatus")
+        print(f"\nFound existing endpoint '{endpoint_name}' with status '{status}'.")
+        if status == "InService":
+            print(f"Reusing existing active SageMaker endpoint '{endpoint_name}'. Skipping new deployment.")
+            with open(ENDPOINT_TXT_PATH, "w") as f:
+                f.write(endpoint_name + "\n")
+            print(f"Saved endpoint name '{endpoint_name}' to '{os.path.abspath(ENDPOINT_TXT_PATH)}'")
+            print("=" * 70)
+            print("SUCCESS: SageMaker Embedding Endpoint is Live (Reused)!")
+            print(f"Endpoint Name: {endpoint_name}")
+            print("Status:        InService")
+            print("REMINDER: Run 'python scripts/teardown_embedding_endpoint.py' when done to stop charges!")
+            print("=" * 70)
+            return endpoint_name
+        elif status in ["Creating", "Updating"]:
+            print(f"Endpoint '{endpoint_name}' is currently in '{status}' state. Waiting for InService...")
+            while True:
+                ep_info = sm_client.describe_endpoint(EndpointName=endpoint_name)
+                status = ep_info.get("EndpointStatus")
+                print(f"   Endpoint Status: {status}")
+                if status == "InService":
+                    break
+                elif status in ["Failed", "Deleting"]:
+                    raise RuntimeError(f"Endpoint deployment ended with failed status: '{status}'")
+                time.sleep(15)
+            with open(ENDPOINT_TXT_PATH, "w") as f:
+                f.write(endpoint_name + "\n")
+            return endpoint_name
+    except ClientError as ce:
+        error_code = ce.response.get("Error", {}).get("Code", "Unknown")
+        error_msg = ce.response.get("Error", {}).get("Message", str(ce))
+        if error_code == "AccessDeniedException":
+            print("\n[IAM PERMISSION ERROR] Access denied calling DescribeEndpoint.")
+            print("Please ensure policy 'AmazonSageMakerFullAccess' is attached to your AWS IAM user/role.")
+            raise ce
+        elif "Could not find" in error_msg or error_code == "ValidationException":
+            print(f"\nEndpoint '{endpoint_name}' does not exist yet. Proceeding with deployment...")
+        else:
+            print(f"\nDescribeEndpoint warning: {error_msg}. Proceeding with deployment attempt...")
 
     try:
         deployed_name = None
@@ -73,7 +119,6 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
         deployed_name = getattr(endpoint, "name", getattr(endpoint, "endpoint_name", endpoint_name))
 
         # 2. Wait for endpoint to reach InService status
-        sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
         print("\n[3/3] Verifying endpoint status...")
         while True:
             try:

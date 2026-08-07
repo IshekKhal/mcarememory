@@ -12,7 +12,7 @@ from app.config import AWS_REGION
 ENDPOINT_TXT_PATH = os.path.join(os.path.dirname(__file__), "..", "sagemaker_endpoint.txt")
 
 def get_target_endpoint_name(custom_name: str = None) -> str:
-    """Resolves target endpoint name from argument, sagemaker_endpoint.txt, or env var."""
+    """Resolves target endpoint name from argument, sagemaker_endpoint.txt, env var, or default."""
     if custom_name and custom_name.strip():
         return custom_name.strip()
 
@@ -26,7 +26,7 @@ def get_target_endpoint_name(custom_name: str = None) -> str:
     if env_name and env_name.strip():
         return env_name.strip()
 
-    return None
+    return "caregiver-bge-embeddings"
 
 def teardown_endpoint(endpoint_name: str = None):
     """
