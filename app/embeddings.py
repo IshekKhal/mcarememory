@@ -1,11 +1,46 @@
 import json
 import logging
+import os
 import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError, NoCredentialsError, EndpointConnectionError, BotoCoreError
-from app.config import AWS_REGION, EMBEDDING_DIMENSION, get_sagemaker_endpoint_name
+from app.config import AWS_REGION, EMBEDDING_DIMENSION, EMBEDDING_MODE, get_sagemaker_endpoint_name
 
 logger = logging.getLogger(__name__)
+
+# Lazy-loaded singleton for local sentence-transformers model
+_LOCAL_MODEL = None
+LOCAL_MODEL_NAME = "BAAI/bge-large-en-v1.5"
+
+def get_local_model():
+    """
+    Lazy-loads and returns the local SentenceTransformer model instance (singleton).
+    Uses BAAI/bge-large-en-v1.5 which applies CLS pooling and L2 normalization by default.
+    """
+    global _LOCAL_MODEL
+    if _LOCAL_MODEL is None:
+        logger.info(f"Loading local SentenceTransformer model '{LOCAL_MODEL_NAME}'...")
+        from sentence_transformers import SentenceTransformer
+        _LOCAL_MODEL = SentenceTransformer(LOCAL_MODEL_NAME)
+        logger.info(f"Local SentenceTransformer model '{LOCAL_MODEL_NAME}' loaded successfully.")
+    return _LOCAL_MODEL
+
+def _generate_embedding_local(text: str) -> list[float]:
+    """Generates a 1024-dim embedding vector using local sentence-transformers model."""
+    clean_text = text.strip()
+    model = get_local_model()
+    # encode() applies model's 1_Pooling config (CLS pooling + L2 normalization) automatically
+    vector = model.encode(clean_text, convert_to_numpy=True)
+    return [float(x) for x in vector]
+
+def _generate_embeddings_batch_local(texts: list[str], batch_size: int = 32) -> list[list[float]]:
+    """Generates 1024-dim embedding vectors for a batch of texts using local sentence-transformers model."""
+    if not texts:
+        return []
+    clean_texts = [t.strip() if t and t.strip() else "general note" for t in texts]
+    model = get_local_model()
+    vectors = model.encode(clean_texts, batch_size=batch_size, convert_to_numpy=True)
+    return [[float(x) for x in vec] for vec in vectors]
 
 def get_sagemaker_runtime_client():
     """Returns a boto3 sagemaker-runtime client configured with app region."""
@@ -17,24 +52,8 @@ def get_sagemaker_runtime_client():
     )
     return boto3.client("sagemaker-runtime", region_name=AWS_REGION, config=config)
 
-def generate_embedding(text: str) -> list[float]:
-    """
-    Generates a 1024-dimensional embedding vector for input text using SageMaker-hosted BGE-large-en-v1.5.
-    
-    Args:
-        text (str): The note or text string to embed.
-        
-    Returns:
-        list[float]: A list of 1024 floating point numbers representing the embedding.
-
-    Raises:
-        ValueError: If text is empty or invalid.
-        RuntimeError: If SageMaker endpoint invocation fails (bad credentials, region error, non-existent endpoint, etc.).
-    """
-    if not text or not text.strip():
-        raise ValueError("Input text for embedding cannot be empty or whitespace.")
-
-    clean_text = text.strip()
+def _generate_embedding_sagemaker(clean_text: str) -> list[float]:
+    """Generates a 1024-dimensional embedding vector via SageMaker endpoint."""
     endpoint_name = get_sagemaker_endpoint_name()
     
     payload = {
@@ -121,18 +140,8 @@ def generate_embedding(text: str) -> list[float]:
         logger.error(err_msg)
         raise RuntimeError(err_msg) from e
 
-
-def generate_embeddings_batch(texts: list[str], batch_size: int = 32) -> list[list[float]]:
-    """
-    Generates 1024-dimensional embedding vectors for a batch of input texts using SageMaker-hosted BGE-large-en-v1.5.
-    
-    Args:
-        texts (list[str]): List of note strings to embed.
-        batch_size (int): Max texts per SageMaker invocation chunk (default 32).
-        
-    Returns:
-        list[list[float]]: List of 1024-dim embedding float vectors matching the order of input texts.
-    """
+def _generate_embeddings_batch_sagemaker(texts: list[str], batch_size: int = 32) -> list[list[float]]:
+    """Generates 1024-dimensional embedding vectors for a batch of input texts using SageMaker."""
     if not texts:
         return []
 
@@ -172,12 +181,58 @@ def generate_embeddings_batch(texts: list[str], batch_size: int = 32) -> list[li
                 all_embeddings.extend(chunk_vectors)
             else:
                 for t in chunk:
-                    all_embeddings.append(generate_embedding(t))
+                    all_embeddings.append(_generate_embedding_sagemaker(t))
         except Exception as e:
             logger.warning(f"Batch embedding invocation failed for chunk (size {len(chunk)}): {e}. Falling back to single requests.")
             for t in chunk:
-                all_embeddings.append(generate_embedding(t))
+                all_embeddings.append(_generate_embedding_sagemaker(t))
 
     return all_embeddings
+
+def generate_embedding(text: str) -> list[float]:
+    """
+    Generates a 1024-dimensional embedding vector for input text.
+    Uses local sentence-transformers or SageMaker endpoint based on EMBEDDING_MODE environment variable.
+    
+    Args:
+        text (str): The note or text string to embed.
+        
+    Returns:
+        list[float]: A list of 1024 floating point numbers representing the embedding.
+    """
+    if not text or not text.strip():
+        raise ValueError("Input text for embedding cannot be empty or whitespace.")
+
+    clean_text = text.strip()
+    mode = os.getenv("EMBEDDING_MODE", EMBEDDING_MODE).lower().strip()
+
+    if mode == "sagemaker":
+        return _generate_embedding_sagemaker(clean_text)
+    else:
+        embedding = _generate_embedding_local(clean_text)
+        if len(embedding) != EMBEDDING_DIMENSION:
+            raise RuntimeError(f"Expected embedding dimension of {EMBEDDING_DIMENSION}, but received {len(embedding)} dimensions.")
+        return embedding
+
+def generate_embeddings_batch(texts: list[str], batch_size: int = 32) -> list[list[float]]:
+    """
+    Generates 1024-dimensional embedding vectors for a batch of input texts.
+    Uses local sentence-transformers or SageMaker endpoint based on EMBEDDING_MODE environment variable.
+    
+    Args:
+        texts (list[str]): List of note strings to embed.
+        batch_size (int): Max texts per batch chunk.
+        
+    Returns:
+        list[list[float]]: List of 1024-dim embedding float vectors matching order of input texts.
+    """
+    if not texts:
+        return []
+
+    mode = os.getenv("EMBEDDING_MODE", EMBEDDING_MODE).lower().strip()
+    if mode == "sagemaker":
+        return _generate_embeddings_batch_sagemaker(texts, batch_size=batch_size)
+    else:
+        return _generate_embeddings_batch_local(texts, batch_size=batch_size)
 
 
