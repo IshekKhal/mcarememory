@@ -148,10 +148,12 @@ def add_resolution_note(
 def recall_relevant_notes(
     conversation_id: str,
     question: str,
-    k: int = 5
-) -> list[dict]:
+    k: int = 5,
+    query_vector: list[float] | None = None,
+    return_metrics: bool = False
+) -> list[dict] | tuple[list[dict], dict]:
     """
-    Given a question, generates its embedding, queries CockroachDB for top-k nearest
+    Given a question (or precomputed query_vector), retrieves top-k nearest
     embedding matches scoped to conversation_id, and returns matching notes with metadata,
     including any resolution notes in the conversation.
     
@@ -159,22 +161,28 @@ def recall_relevant_notes(
         conversation_id (str): UUID string of the target conversation.
         question (str): The search query or question text.
         k (int): Number of top matches to retrieve.
+        query_vector (list[float], optional): Optional precomputed 1024-dim embedding.
+        return_metrics (bool): If True, returns (results, metrics_dict).
         
     Returns:
-        list[dict]: List of matching note dicts containing memory_id, message_id, content,
-                    caregiver_name, note_type, created_at, resolves_note_ids, and distance score.
+        list[dict] or (list[dict], dict): List of matching note dicts, and optional metrics dict.
     """
-    if not question or not question.strip():
-        raise ValueError("Search question cannot be empty.")
+    import time
+    if not question and query_vector is None:
+        raise ValueError("Search question or query_vector must be provided.")
 
-    # Generate query embedding
-    query_vector = generate_embedding(question)
+    t_embed_start = time.perf_counter()
+    if query_vector is None:
+        query_vector = generate_embedding(question)
+    embed_ms = (time.perf_counter() - t_embed_start) * 1000.0
+
     query_vector_str = f"[{','.join(str(f) for f in query_vector)}]"
 
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("ALTER TABLE messages ADD COLUMN IF NOT EXISTS resolves_note_ids TEXT[];")
-            
+            # Execute vector similarity query using <-> (L2 distance) with vector search subquery
+            # to ensure CockroachDB query planner activates the idx_memory_embeddings C-SPANN vector index.
+            t_sql_start = time.perf_counter()
             cur.execute(
                 """
                 SELECT 
@@ -183,18 +191,29 @@ def recall_relevant_notes(
                     m.caregiver_name,
                     m.note_type,
                     m.created_at,
-                    (e.embedding <=> %s::vector) AS distance,
+                    e.distance,
                     m.message_id,
                     m.resolves_note_ids
-                FROM memory_embeddings e
+                FROM (
+                    SELECT 
+                        memory_id, 
+                        source_message_id, 
+                        conversation_id, 
+                        content, 
+                        (embedding <-> %s::vector) AS distance
+                    FROM memory_embeddings
+                    ORDER BY embedding <-> %s::vector ASC
+                    LIMIT 500
+                ) e
                 JOIN messages m ON e.source_message_id = m.message_id
                 WHERE e.conversation_id = %s
-                ORDER BY e.embedding <=> %s::vector ASC
+                ORDER BY e.distance ASC
                 LIMIT %s;
                 """,
-                (query_vector_str, conversation_id, query_vector_str, k)
+                (query_vector_str, query_vector_str, conversation_id, k)
             )
             rows = cur.fetchall()
+            raw_sql_ms = (time.perf_counter() - t_sql_start) * 1000.0
 
             results = []
             seen_message_ids = set()
@@ -245,6 +264,14 @@ def recall_relevant_notes(
                         "resolves_note_ids": [str(x) for x in row[6]] if row[6] else []
                     })
                     
+            metrics = {
+                "embed_latency_ms": embed_ms,
+                "raw_sql_latency_ms": raw_sql_ms,
+                "total_recall_ms": embed_ms + raw_sql_ms
+            }
+
+            if return_metrics:
+                return results, metrics
             return results
 
 def get_caregiver_notes(conversation_id: str) -> list[dict]:
