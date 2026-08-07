@@ -67,11 +67,13 @@ def start_safety_timer(minutes: float = None, endpoint_name: str = None):
                 print(f"automatically torn down after {mins_display} minutes. Nothing is running.")
                 print("No further AWS charges will be incurred from this endpoint.")
                 print("=" * 60 + "\n")
+                sys.stdout.flush()
                 break
 
             rem_mins = int(remaining // 60)
             rem_secs = int(remaining % 60)
             print(f"[{time.strftime('%H:%M:%S')}] Safety Timer: {rem_mins}m {rem_secs}s remaining before auto-teardown...")
+            sys.stdout.flush()
             time.sleep(min(remaining, check_interval))
 
     except KeyboardInterrupt:
