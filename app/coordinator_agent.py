@@ -93,7 +93,6 @@ def answer_caregiver_question(
     for idx, note in enumerate(notes, start=1):
         caregiver = note.get("caregiver_name", "Unknown Caregiver")
         note_type = note.get("note_type", "general")
-        date_str = format_human_timestamp(note.get("created_at"))
         content = note.get("content", "")
         msg_id = note.get("message_id", "")
         resolves = note.get("resolves_note_ids", [])
@@ -106,7 +105,6 @@ def answer_caregiver_question(
             f"{note_header}:\n"
             f"  Caregiver: {caregiver}\n"
             f"  Category: {note_type}\n"
-            f"  Recorded At: {date_str}\n"
             f"  Content: \"{content}\""
             + (f"\n  Resolves Note IDs: {resolves}" if resolves else "")
         )
