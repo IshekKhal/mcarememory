@@ -49,9 +49,25 @@ bash schema/verify_schema.sh
 
 ## Milestone 4: Caregiver Memory Semantic Recall (SageMaker BGE)
 
-### Deploy SageMaker BGE-large-en-v1.5 Embedding Endpoint
+### Deploy SageMaker BGE-large-en-v1.5 Embedding Endpoint (Auto-Safety-Timer Enabled)
 ```bash
+# Standard deploy (Auto-starts safety timer with 60-minute default teardown)
 python scripts/deploy_embedding_endpoint.py
+
+# Deploy with custom safety timer duration (e.g. 90 minutes auto-teardown)
+SAFETY_TIMER_MINUTES=90 python scripts/deploy_embedding_endpoint.py
+
+# Short-duration test deploy (e.g. 0.2 minutes / 12 seconds auto-teardown test)
+SAFETY_TIMER_MINUTES=0.2 python scripts/deploy_embedding_endpoint.py
+```
+
+### Standalone Safety Countdown Timer (Manual Mode)
+```bash
+# Launch safety timer manually for active endpoint (default 60 minutes or via env var)
+python scripts/auto_safety_timer.py
+
+# Launch safety timer with explicit duration
+python scripts/auto_safety_timer.py --minutes 30
 ```
 
 ### Seed Caregiver Memory Notes
@@ -72,6 +88,7 @@ python scripts/demo_query.py "has Grandma Chen complained of physical pain?"
 ```bash
 python scripts/teardown_embedding_endpoint.py
 ```
+
 
 ---
 

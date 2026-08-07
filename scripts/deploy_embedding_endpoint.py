@@ -1,7 +1,14 @@
 import sys
 import os
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import time
 import argparse
+import subprocess
 import boto3
 from botocore.exceptions import ClientError
 
@@ -15,16 +22,33 @@ MODEL_ID = "huggingface-sentencesimilarity-bge-large-en-v1-5"
 DEFAULT_INSTANCE_TYPE = "ml.m5.xlarge"
 ENDPOINT_TXT_PATH = os.path.join(os.path.dirname(__file__), "..", "sagemaker_endpoint.txt")
 
+def launch_safety_timer(endpoint_name: str, minutes: float):
+    """Launches auto_safety_timer.py in the background for the target endpoint."""
+    timer_script = os.path.join(os.path.dirname(__file__), "auto_safety_timer.py")
+    mins_str = f"{int(minutes)}" if minutes == int(minutes) else f"{minutes}"
+    print(f"\n[Auto-Safety-Timer] Launching background safety timer ({mins_str} mins auto-teardown)...")
+    cmd = [sys.executable, timer_script, "--minutes", str(minutes), "--endpoint-name", endpoint_name]
+    subprocess.Popen(cmd)
+
 def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DEFAULT_INSTANCE_TYPE, role_arn: str = None):
     """
     Deploys the BAAI/bge-large-en-v1.5 embedding model to a SageMaker endpoint using JumpStart / ModelBuilder.
     If the endpoint already exists and is InService, reuses it without re-deploying.
-    Saves the endpoint name to sagemaker_endpoint.txt upon completion.
+    Saves the endpoint name to sagemaker_endpoint.txt upon completion and auto-starts safety timer.
     """
     os.environ["AWS_DEFAULT_REGION"] = AWS_REGION
 
     if not endpoint_name or not endpoint_name.strip():
         endpoint_name = os.getenv("SAGEMAKER_ENDPOINT_NAME", DEFAULT_ENDPOINT_NAME).strip()
+
+    raw_timer_env = os.getenv("SAFETY_TIMER_MINUTES")
+    if raw_timer_env:
+        try:
+            timer_minutes = float(raw_timer_env)
+        except ValueError:
+            timer_minutes = 60.0
+    else:
+        timer_minutes = 60.0
 
     role_arn = role_arn or os.getenv("SAGEMAKER_ROLE_ARN")
     if not role_arn:
@@ -42,6 +66,11 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
     print(f"  Endpoint Name: {endpoint_name}")
     if role_arn:
         print(f"  Role ARN:      {role_arn}")
+    if raw_timer_env:
+        mins_str = f"{int(timer_minutes)}" if timer_minutes == int(timer_minutes) else f"{timer_minutes}"
+        print(f"  Safety Timer:  {mins_str} minutes (set via SAFETY_TIMER_MINUTES env var)")
+    else:
+        print(f"  Safety timer:  will auto-teardown in 60 minutes unless SAFETY_TIMER_MINUTES is set")
     print("=" * 70)
 
     sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
@@ -56,10 +85,13 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
             with open(ENDPOINT_TXT_PATH, "w") as f:
                 f.write(endpoint_name + "\n")
             print(f"Saved endpoint name '{endpoint_name}' to '{os.path.abspath(ENDPOINT_TXT_PATH)}'")
+            launch_safety_timer(endpoint_name, timer_minutes)
+            mins_str = f"{int(timer_minutes)}" if timer_minutes == int(timer_minutes) else f"{timer_minutes}"
             print("=" * 70)
             print("SUCCESS: SageMaker Embedding Endpoint is Live (Reused)!")
             print(f"Endpoint Name: {endpoint_name}")
             print("Status:        InService")
+            print(f"Safety Timer:  Active ({mins_str} mins auto-teardown)")
             print("REMINDER: Run 'python scripts/teardown_embedding_endpoint.py' when done to stop charges!")
             print("=" * 70)
             return endpoint_name
@@ -76,6 +108,15 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
                 time.sleep(15)
             with open(ENDPOINT_TXT_PATH, "w") as f:
                 f.write(endpoint_name + "\n")
+            launch_safety_timer(endpoint_name, timer_minutes)
+            mins_str = f"{int(timer_minutes)}" if timer_minutes == int(timer_minutes) else f"{timer_minutes}"
+            print("=" * 70)
+            print("SUCCESS: SageMaker Embedding Endpoint is Live!")
+            print(f"Endpoint Name: {endpoint_name}")
+            print("Status:        InService")
+            print(f"Safety Timer:  Active ({mins_str} mins auto-teardown)")
+            print("REMINDER: Run 'python scripts/teardown_embedding_endpoint.py' when done to stop charges!")
+            print("=" * 70)
             return endpoint_name
     except ClientError as ce:
         error_code = ce.response.get("Error", {}).get("Code", "Unknown")
@@ -143,10 +184,13 @@ def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DE
             f.write(deployed_name + "\n")
         print(f"\nSaved endpoint name '{deployed_name}' to '{os.path.abspath(ENDPOINT_TXT_PATH)}'")
 
+        launch_safety_timer(deployed_name, timer_minutes)
+        mins_str = f"{int(timer_minutes)}" if timer_minutes == int(timer_minutes) else f"{timer_minutes}"
         print("\n" + "=" * 70)
         print("SUCCESS: SageMaker Embedding Endpoint is Live!")
         print(f"Endpoint Name: {deployed_name}")
         print("Status:        InService")
+        print(f"Safety Timer:  Active ({mins_str} mins auto-teardown)")
         print("REMINDER: Run 'python scripts/teardown_embedding_endpoint.py' when done to stop charges!")
         print("=" * 70)
         return deployed_name
@@ -166,3 +210,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
