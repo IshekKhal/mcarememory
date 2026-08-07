@@ -29,12 +29,15 @@ def launch_safety_timer(endpoint_name: str, minutes: float):
     print(f"\n[Auto-Safety-Timer] Launching background safety timer ({mins_str} mins auto-teardown)...")
     cmd = [sys.executable, timer_script, "--minutes", str(minutes), "--endpoint-name", endpoint_name]
     
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
     if os.name == "nt":
         log_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "safety_timer.log"))
-        f = open(log_file, "a", encoding="utf-8")
-        subprocess.Popen(cmd, stdout=f, stderr=f, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
+        f = open(log_file, "a", encoding="utf-8", buffering=1)
+        subprocess.Popen(cmd, stdout=f, stderr=f, env=env, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP)
     else:
-        subprocess.Popen(cmd)
+        subprocess.Popen(cmd, env=env)
 
 def deploy_jumpstart_endpoint(endpoint_name: str = None, instance_type: str = DEFAULT_INSTANCE_TYPE, role_arn: str = None):
     """
