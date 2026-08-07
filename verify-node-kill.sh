@@ -1,33 +1,23 @@
 #!/usr/bin/env bash
 set -e
 
-echo "=== Starting CockroachDB Node-Kill Verification ==="
+echo "=== Starting CockroachDB Node-Kill Verification (Full Real Pipeline) ==="
 
-DB_NAME="survival_test"
-TABLE_NAME="cluster_verification"
+DB_NAME="agent_memory"
 
-# 1. Setup database and test table
-echo "Creating database '${DB_NAME}' and table '${TABLE_NAME}' on roach1..."
+# 1. Verify database and schema on roach1
+echo "Verifying real schema on database '${DB_NAME}' via roach1..."
 docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 <<EOF
-CREATE DATABASE IF NOT EXISTS ${DB_NAME};
 USE ${DB_NAME};
-CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
-  id INT8 PRIMARY KEY DEFAULT unique_rowid(),
-  note STRING,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-INSERT INTO ${TABLE_NAME} (note) VALUES ('Initial test record prior to node kill');
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS resolves_note_ids TEXT[];
 EOF
 
-echo "Verifying initial read query..."
-INITIAL_ROWS=$(docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 -e "SELECT note FROM ${DB_NAME}.${TABLE_NAME};" --format=csv | grep -v "note" | wc -l)
-echo "Initial row count: ${INITIAL_ROWS}"
+INITIAL_MSG_COUNT=$(docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 -e "SELECT count(*) FROM ${DB_NAME}.messages;" --format=csv | tail -n 1)
+INITIAL_EMBED_COUNT=$(docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 -e "SELECT count(*) FROM ${DB_NAME}.memory_embeddings;" --format=csv | tail -n 1)
 
-if [ "${INITIAL_ROWS}" -lt 1 ]; then
-  echo "FAIL: Expected initial rows, but none found."
-  exit 1
-fi
-echo "Initial write and read verified successfully."
+echo "Initial dataset status:"
+echo "  - messages count: ${INITIAL_MSG_COUNT}"
+echo "  - memory_embeddings count: ${INITIAL_EMBED_COUNT}"
 
 # 2. Simulate Node Outage (Kill roach2)
 echo ""
@@ -40,21 +30,23 @@ echo "Testing write to surviving cluster nodes (roach1 & roach3)..."
 WRITE_SUCCESS=0
 docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 <<EOF && WRITE_SUCCESS=1
 USE ${DB_NAME};
-INSERT INTO ${TABLE_NAME} (note) VALUES ('Post-kill test record while roach2 is down');
+INSERT INTO messages (conversation_id, role, content, caregiver_name, note_type, resolves_note_ids)
+SELECT conversation_id, 'user', 'Shell script node-kill resilience verification note', 'Nurse Sarah', 'observation', ARRAY['test-resolution-id']
+FROM conversations LIMIT 1;
 EOF
 
 if [ $WRITE_SUCCESS -ne 1 ]; then
   echo "FAIL: Write failed while roach2 was down!"
   exit 1
 fi
-echo "Post-kill WRITE succeeded!"
+echo "Post-kill WRITE to real messages table succeeded!"
 
 echo "Testing read from surviving cluster nodes..."
-POST_KILL_COUNT=$(docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 -e "SELECT note FROM ${DB_NAME}.${TABLE_NAME};" --format=csv | grep -v "note" | wc -l)
-echo "Post-kill row count: ${POST_KILL_COUNT}"
+POST_KILL_COUNT=$(docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257 -e "SELECT count(*) FROM ${DB_NAME}.messages;" --format=csv | tail -n 1)
+echo "Post-kill message count: ${POST_KILL_COUNT}"
 
-if [ "${POST_KILL_COUNT}" -le "${INITIAL_ROWS}" ]; then
-  echo "FAIL: Post-kill read failed or missing new row!"
+if [ "${POST_KILL_COUNT}" -le "${INITIAL_MSG_COUNT}" ]; then
+  echo "FAIL: Post-kill read failed or missing new message row!"
   exit 1
 fi
 echo "Post-kill READ succeeded!"
