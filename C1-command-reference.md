@@ -267,19 +267,12 @@ python scripts/test_mcp_discovery.py
 
 ### 6. Run Full Coordinator Agent Q&A Suite via Cloud MCP (`DB_MODE=cloud-mcp`)
 ```bash
-DB_MODE=cloud-mcp python scripts/verify_cloud_mcp.py
+python scripts/verify_cloud_mcp.py
 ```
-*Expected Output*: Executes 6 caregiver questions through `CockroachCloudMCPClient` using `https://cockroachlabs.cloud/mcp`, confirming conflict detection, resolution retrieval, synthesized answers, and medical safety guardrails.
+*Expected Output*: Executes 6 caregiver questions through `CockroachCloudMCPClient` using `https://cockroachlabs.cloud/mcp` with CTE vector formatting (query length ~9.1KB, safely under the 16,384 character limit). Auto-resolves cluster UUID via JSON-RPC, confirming conflict detection, resolution retrieval, synthesized answers, and medical safety guardrails.
 
-### 7. Deploy BGE-large-en-v1.5 to SageMaker Serverless Inference
+### 7. Deploy BGE-large-en-v1.5 to SageMaker Serverless Inference (Persistent / No Auto-Teardown)
 ```bash
 python scripts/deploy_serverless_embedding_endpoint.py
 ```
-*Expected Output*: Deploys BGE-large-en-v1.5 to SageMaker Serverless Inference with 4096MB memory and zero idle cost.
-
-
-
-
-
-
-
+*Expected Output*: Deploys BGE-large-en-v1.5 to SageMaker Serverless Inference via raw `boto3` (`CreateModel`, `CreateEndpointConfig`, `CreateEndpoint`) with 4096MB memory and max concurrency 10. Scales to 0 when idle ($0/hr idle cost). The auto-safety-timer has been removed from this script so the serverless endpoint remains persistently live for the hackathon judging window.

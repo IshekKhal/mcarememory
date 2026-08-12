@@ -23,14 +23,6 @@ DEFAULT_MEMORY_MB = 4096
 DEFAULT_MAX_CONCURRENCY = 10
 ENDPOINT_TXT_PATH = os.path.join(os.path.dirname(__file__), "..", "sagemaker_endpoint.txt")
 
-def launch_safety_timer(endpoint_name: str, minutes: float):
-    """Launches auto_safety_timer.py in the background for the target endpoint."""
-    timer_script = os.path.join(os.path.dirname(__file__), "auto_safety_timer.py")
-    mins_str = f"{int(minutes)}" if minutes == int(minutes) else f"{minutes}"
-    print(f"\n[Auto-Safety-Timer] Launching background safety timer ({mins_str} mins auto-teardown)...")
-    cmd = [sys.executable, timer_script, "--minutes", str(minutes), "--endpoint-name", endpoint_name]
-    subprocess.Popen(cmd)
-
 def deploy_serverless_endpoint(
     endpoint_name: str = None,
     memory_mb: int = DEFAULT_MEMORY_MB,
@@ -45,15 +37,6 @@ def deploy_serverless_endpoint(
 
     if not endpoint_name or not endpoint_name.strip():
         endpoint_name = os.getenv("SAGEMAKER_ENDPOINT_NAME", DEFAULT_ENDPOINT_NAME).strip()
-
-    raw_timer_env = os.getenv("SAFETY_TIMER_MINUTES")
-    if raw_timer_env:
-        try:
-            timer_minutes = float(raw_timer_env)
-        except ValueError:
-            timer_minutes = 60.0
-    else:
-        timer_minutes = 60.0
 
     role_arn = role_arn or os.getenv("SAGEMAKER_ROLE_ARN")
     if not role_arn:
@@ -72,7 +55,7 @@ def deploy_serverless_endpoint(
     print(f"  Endpoint Name:   {endpoint_name}")
     if role_arn:
         print(f"  Role ARN:        {role_arn}")
-    print("  Billing Mode:    Serverless (Scales to 0, zero idle cost)")
+    print("  Billing Mode:    Serverless (Scales to 0, zero idle cost, no auto-teardown)")
     print("=" * 70)
 
     sm_client = boto3.client("sagemaker", region_name=AWS_REGION)
@@ -87,7 +70,6 @@ def deploy_serverless_endpoint(
             with open(ENDPOINT_TXT_PATH, "w") as f:
                 f.write(endpoint_name + "\n")
             print(f"Saved endpoint name '{endpoint_name}' to '{os.path.abspath(ENDPOINT_TXT_PATH)}'")
-            launch_safety_timer(endpoint_name, timer_minutes)
             print("=" * 70)
             print("SUCCESS: SageMaker Serverless Embedding Endpoint is Live (Reused)!")
             print(f"Endpoint Name: {endpoint_name}")
@@ -107,7 +89,6 @@ def deploy_serverless_endpoint(
                 time.sleep(15)
             with open(ENDPOINT_TXT_PATH, "w") as f:
                 f.write(endpoint_name + "\n")
-            launch_safety_timer(endpoint_name, timer_minutes)
             print("=" * 70)
             print("SUCCESS: SageMaker Serverless Embedding Endpoint is Live!")
             print(f"Endpoint Name: {endpoint_name}")
@@ -127,50 +108,83 @@ def deploy_serverless_endpoint(
             print(f"\nDescribeEndpoint warning: {error_msg}. Proceeding with deployment attempt...")
 
     try:
-        from sagemaker.serve.model_builder import ModelBuilder
-        from sagemaker.core.jumpstart.configs import JumpStartConfig
-        try:
-            from sagemaker.core.serverless_inference_config import ServerlessInferenceConfig
-        except ImportError:
-            try:
-                from sagemaker.serve.serverless.serverless_inference_config import ServerlessInferenceConfig
-            except ImportError:
-                from sagemaker.serverless import ServerlessInferenceConfig
+        # ── Resolve container image via JumpStart ──────────────────────
+        from sagemaker.core.jumpstart.artifacts.image_uris import _retrieve_image_uri
 
-        print("\n[1/3] Initializing JumpStart model via SageMaker ModelBuilder...")
-        jumpstart_config = JumpStartConfig(model_id=MODEL_ID)
+        print("\n[1/4] Resolving inference container image...")
+        image_uri = _retrieve_image_uri(
+            model_id=MODEL_ID, model_version="*",
+            image_scope="inference", region=AWS_REGION,
+            instance_type="ml.m5.xlarge",           # only used for container lookup
+        )
+        print(f"   Container: {image_uri}")
 
-        mb_kwargs = {
-            "jumpstart_config": jumpstart_config,
+        # HuggingFace Hub env vars — container pulls model at startup
+        env_vars = {
+            "HF_MODEL_ID": "BAAI/bge-large-en-v1.5",
+            "HF_TASK": "feature-extraction",
+            "SAGEMAKER_CONTAINER_LOG_LEVEL": "20",
+            "SAGEMAKER_REGION": AWS_REGION,
+        }
+
+        # ── Unique resource names (timestamp-based) ────────────────────
+        ts = int(time.time())
+        model_name = f"{endpoint_name}-model-{ts}"
+        config_name = f"{endpoint_name}-config-{ts}"
+
+        # ── boto3: CreateModel ─────────────────────────────────────────
+        print(f"\n[2/4] Creating SageMaker Model '{model_name}'...")
+        create_model_params = {
+            "ModelName": model_name,
+            "PrimaryContainer": {
+                "Image": image_uri,
+                "Environment": env_vars,
+            },
+            "EnableNetworkIsolation": False,
         }
         if role_arn:
-            mb_kwargs["role_arn"] = role_arn
+            create_model_params["ExecutionRoleArn"] = role_arn
+        sm_client.create_model(**create_model_params)
+        print(f"   Model '{model_name}' created.")
 
-        model_builder = ModelBuilder.from_jumpstart_config(**mb_kwargs)
-        core_model = model_builder.build(model_name=f"{MODEL_ID}-model")
-        
-        serverless_config = ServerlessInferenceConfig(
-            memory_size_in_mb=memory_mb,
-            max_concurrency=max_concurrency
+        # ── boto3: CreateEndpointConfig (Serverless) ───────────────────
+        print(f"\n[3/4] Creating Serverless EndpointConfig '{config_name}'...")
+        sm_client.create_endpoint_config(
+            EndpointConfigName=config_name,
+            ProductionVariants=[
+                {
+                    "VariantName": "AllTraffic",
+                    "ModelName": model_name,
+                    "ServerlessConfig": {
+                        "MemorySizeInMB": memory_mb,
+                        "MaxConcurrency": max_concurrency,
+                    },
+                }
+            ],
+        )
+        print(f"   EndpointConfig '{config_name}' created.")
+
+        # ── boto3: CreateEndpoint ──────────────────────────────────────
+        print(f"\n[4/4] Creating Serverless Endpoint '{endpoint_name}'...")
+        sm_client.create_endpoint(
+            EndpointName=endpoint_name,
+            EndpointConfigName=config_name,
         )
 
-        print(f"\n[2/3] Deploying SageMaker Serverless endpoint '{endpoint_name}' (4096MB memory)...")
-        endpoint = model_builder.deploy(
-            endpoint_name=endpoint_name,
-            serverless_inference_config=serverless_config
-        )
-        deployed_name = getattr(endpoint, "name", getattr(endpoint, "endpoint_name", endpoint_name))
-
-        print("\n[3/3] Verifying endpoint status...")
+        # ── Wait for InService ─────────────────────────────────────────
+        print("\n   Waiting for endpoint to reach InService (this may take 3-8 minutes)...")
         while True:
             try:
-                ep_info = sm_client.describe_endpoint(EndpointName=deployed_name)
+                ep_info = sm_client.describe_endpoint(EndpointName=endpoint_name)
                 status = ep_info.get("EndpointStatus")
                 print(f"   Endpoint Status: {status}")
                 if status == "InService":
                     break
                 elif status in ["Failed", "Deleting"]:
-                    raise RuntimeError(f"Endpoint deployment ended with failed status: '{status}'")
+                    failure = ep_info.get("FailureReason", "Unknown")
+                    raise RuntimeError(
+                        f"Endpoint deployment ended with status '{status}': {failure}"
+                    )
             except ClientError as ce:
                 error_code = ce.response.get("Error", {}).get("Code", "Unknown")
                 if error_code == "AccessDeniedException":
@@ -180,17 +194,16 @@ def deploy_serverless_endpoint(
             time.sleep(15)
 
         with open(ENDPOINT_TXT_PATH, "w") as f:
-            f.write(deployed_name + "\n")
-        print(f"\nSaved endpoint name '{deployed_name}' to '{os.path.abspath(ENDPOINT_TXT_PATH)}'")
+            f.write(endpoint_name + "\n")
+        print(f"\nSaved endpoint name '{endpoint_name}' to '{os.path.abspath(ENDPOINT_TXT_PATH)}'")
 
-        launch_safety_timer(deployed_name, timer_minutes)
         print("\n" + "=" * 70)
         print("SUCCESS: SageMaker Serverless Embedding Endpoint is Live!")
-        print(f"Endpoint Name: {deployed_name}")
+        print(f"Endpoint Name: {endpoint_name}")
         print("Status:        InService")
-        print("Billing:       Serverless (Zero idle cost)")
+        print("Billing:       Serverless (Zero idle cost, persistent)")
         print("=" * 70)
-        return deployed_name
+        return endpoint_name
 
     except Exception as e:
         print(f"\n[ERROR] SageMaker Serverless Endpoint Deployment Failed: {e}")
