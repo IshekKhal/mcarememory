@@ -113,6 +113,73 @@ def create_note():
         return jsonify({"status": "error", "message": user_msg}), 500
 
 
+@app.route("/healthz", methods=["GET"])
+def health_check():
+    """Lightweight health check endpoint for Render and UptimeRobot monitoring."""
+    return jsonify({"status": "ok"}), 200
+
+
+SIMULATION_BATCHES = [
+    {
+        "caregiver_name": "Nurse David",
+        "note_type": "observation",
+        "content": "Grandma Chen spent 30 minutes reading in the sunroom after breakfast. Mood is calm and cheerful."
+    },
+    {
+        "caregiver_name": "Dr. Evelyn Vance",
+        "note_type": "medication",
+        "content": "Updated clinical care plan: Increased Lisinopril to 20mg daily starting today at 2:00 PM due to recurring elevated systolic readings."
+    },
+    {
+        "caregiver_name": "Caregiver Mark",
+        "note_type": "medication",
+        "content": "Administered afternoon blood pressure medication Lisinopril 10mg at 2:15 PM with water."
+    },
+    {
+        "caregiver_name": "Physical Therapist Rachel",
+        "note_type": "observation",
+        "content": "Completed 20-minute seated leg lift session. Patient tolerated exercises well without complaints of joint pain."
+    }
+]
+
+
+@app.route("/api/simulate", methods=["POST"])
+def simulate_live_activity():
+    """Generates and inserts a batch of realistic caregiver notes in real time including a conflicting pair."""
+    try:
+        cid = get_active_conversation_id()
+        inserted_notes = []
+
+        for note in SIMULATION_BATCHES:
+            msg_id = add_caregiver_note(
+                conversation_id=cid,
+                caregiver_name=note["caregiver_name"],
+                content=note["content"],
+                note_type=note["note_type"]
+            )
+            inserted_notes.append({
+                "message_id": msg_id,
+                "caregiver_name": note["caregiver_name"],
+                "note_type": note["note_type"],
+                "content": note["content"]
+            })
+
+        return jsonify({
+            "status": "success",
+            "message": f"Successfully simulated live batch of {len(inserted_notes)} caregiver notes.",
+            "conversation_id": cid,
+            "inserted_count": len(inserted_notes),
+            "notes": inserted_notes
+        }), 201
+
+    except Exception as e:
+        logger.exception("Error during live activity simulation")
+        return jsonify({
+            "status": "error",
+            "message": f"Simulation failed: {str(e)}"
+        }), 500
+
+
 @app.route("/api/ask", methods=["POST"])
 def ask_question():
     """Accepts a caregiver question and synthesizes a conflict-aware answer using Claude Haiku 4.5."""
@@ -140,6 +207,7 @@ def ask_question():
             "status": "error",
             "message": f"Failed to synthesize answer: {str(e)}"
         }), 500
+
 
 
 if __name__ == "__main__":
