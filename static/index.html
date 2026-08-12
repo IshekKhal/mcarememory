@@ -35,6 +35,8 @@
             --amber-bg: #fffbeb;
             --amber-border: #fde68a;
             --amber-text: #b45309;
+            --purple-bg: #f3e8ff;
+            --purple-text: #6b21a8;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
             --radius-card: 12px;
@@ -102,6 +104,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .header-status {
@@ -124,6 +127,34 @@
             border-radius: 50%;
             display: inline-block;
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-simulate {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-simulate:hover {
+            background: linear-gradient(135deg, #6d28d9, #5b21b6);
+            transform: translateY(-1px);
+        }
+
+        .btn-simulate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .btn-dev-toggle {
@@ -228,7 +259,179 @@
             line-height: 1.4;
         }
 
-        /* Ask Assistant Form */
+        /* Chat Window Styling */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .chat-history {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            height: 380px;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-elem);
+        }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 88%;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+        }
+
+        .chat-msg.assistant {
+            align-self: flex-start;
+        }
+
+        .msg-meta {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chat-msg.user .msg-meta {
+            justify-content: flex-end;
+        }
+
+        .msg-bubble {
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chat-msg.user .msg-bubble {
+            background-color: var(--primary);
+            color: #ffffff;
+            border-radius: 14px 14px 2px 14px;
+        }
+
+        .chat-msg.assistant .msg-bubble {
+            background-color: #ffffff;
+            color: var(--text-main);
+            border: 1px solid #cbd5e1;
+            border-radius: 14px 14px 14px 2px;
+        }
+
+        .chat-msg.assistant.has-conflict .msg-bubble {
+            background-color: var(--amber-bg);
+            border-color: var(--amber-border);
+        }
+
+        .conflict-banner {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--amber-text);
+            background-color: #fef3c7;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .msg-bubble p {
+            margin-bottom: 8px;
+        }
+        .msg-bubble p:last-child {
+            margin-bottom: 0;
+        }
+        .msg-bubble ul, .msg-bubble ol {
+            margin-left: 20px;
+            margin-bottom: 8px;
+        }
+        .msg-bubble li {
+            margin-bottom: 4px;
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 11px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-main);
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: var(--radius-elem);
+            transition: all 0.15s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .btn-send {
+            padding: 11px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: var(--primary);
+            border: none;
+            border-radius: var(--radius-elem);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn-send:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-send:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Preset Question Chips */
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .chip {
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .chip:hover {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+            border-color: #cbd5e1;
+        }
+
+        /* Note Add Form */
         .ask-form {
             display: flex;
             flex-direction: column;
@@ -260,15 +463,15 @@
             transition: all 0.15s ease;
         }
 
-        input[type="text"]:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-        }
-
         textarea {
             resize: vertical;
-            min-height: 90px;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
         }
 
         .btn {
@@ -297,101 +500,6 @@
             cursor: not-allowed;
         }
 
-        /* Preset Question Chips */
-        .chip-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .chip {
-            background-color: #f1f5f9;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .chip:hover {
-            background-color: #e2e8f0;
-            color: var(--text-main);
-            border-color: #cbd5e1;
-        }
-
-        /* Answer Output Area & Markdown Formatting */
-        .answer-box {
-            margin-top: 20px;
-            padding: 18px 20px;
-            border-radius: var(--radius-elem);
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            display: none;
-            transition: all 0.2s ease;
-        }
-
-        .answer-box.active {
-            display: block;
-        }
-
-        .answer-header {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .answer-content {
-            font-size: 14px;
-            color: #1e293b;
-            line-height: 1.6;
-        }
-
-        /* Formatted Markdown Content Styles */
-        .answer-content p {
-            margin-bottom: 10px;
-        }
-        .answer-content p:last-child {
-            margin-bottom: 0;
-        }
-        .answer-content ul, .answer-content ol {
-            margin-left: 20px;
-            margin-bottom: 10px;
-        }
-        .answer-content li {
-            margin-bottom: 4px;
-        }
-        .answer-content strong {
-            color: var(--text-main);
-            font-weight: 600;
-        }
-
-        /* Discrepancy Highlight Box */
-        .answer-box.has-conflict {
-            background-color: var(--amber-bg);
-            border-color: var(--amber-border);
-        }
-
-        .answer-box.has-conflict .answer-header {
-            color: var(--amber-text);
-        }
-
-        /* Note Add Form */
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
         /* Notes Feed List */
         .feed-header {
             display: flex;
@@ -416,7 +524,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            max-height: 660px;
+            max-height: 680px;
             overflow-y: auto;
             padding-right: 6px;
         }
@@ -427,6 +535,15 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius-elem);
             transition: border-color 0.15s ease;
+        }
+
+        .note-item.simulated {
+            animation: highlightPulse 2s ease-out;
+        }
+
+        @keyframes highlightPulse {
+            0% { background-color: #f3e8ff; border-color: #c084fc; }
+            100% { background-color: #ffffff; border-color: var(--border-color); }
         }
 
         .note-item:hover {
@@ -499,7 +616,7 @@
             font-size: 14px;
         }
 
-        /* Status Toast */
+        /* Toast Notifications */
         .status-toast {
             font-size: 13px;
             padding: 10px 14px;
@@ -524,9 +641,12 @@
             </div>
         </div>
         <div class="header-actions">
+            <button class="btn-simulate" id="simulate-btn" onclick="runLiveSimulation()">
+                <span>⚡ Simulate Live Activity</span>
+            </button>
             <div class="header-status">
                 <span class="status-dot"></span>
-                <span>System Active • Shared Memory Connected</span>
+                <span>System Active</span>
             </div>
             <button class="btn-dev-toggle" id="dev-toggle-btn" onclick="toggleDevDrawer()">Developer Info ⚙️</button>
         </div>
@@ -546,32 +666,38 @@
     <div class="layout-grid">
         <!-- Left Column: Caregiver Actions -->
         <div>
-            <!-- Section 1: Ask Coordinator -->
+            <!-- Section 1: Back-and-Forth Chat -->
             <div class="card">
-                <span class="section-badge badge-blue">1. Ask Assistant</span>
+                <span class="section-badge badge-blue">1. Care Coordinator Chat</span>
                 <div class="card-header">
-                    <h2>Ask Coordinator Assistant</h2>
-                    <p>Ask questions about Grandma Chen's care history, medications, or schedules. The assistant reads all notes and highlights any conflicts.</p>
+                    <h2>Chat with Coordinator Assistant</h2>
+                    <p>Ask questions about Grandma Chen's care history, medications, or schedules. The assistant reads all notes and highlights any conflicts in real time.</p>
                 </div>
-                <form id="ask-form" class="ask-form">
-                    <div class="input-group">
-                        <label for="question-input">Caregiver Question</label>
-                        <input type="text" id="question-input" placeholder="e.g. Was her afternoon blood pressure medication given today?" required>
+
+                <div class="chat-container">
+                    <div class="chat-history" id="chat-history">
+                        <!-- Initial Welcome Message -->
+                        <div class="chat-msg assistant">
+                            <div class="msg-meta">
+                                <span>👵 Coordinator Assistant</span>
+                            </div>
+                            <div class="msg-bubble">
+                                Hello! I'm Grandma Chen's Care Coordinator Assistant. I track all caregiver notes and check for medication discrepancies. How can I help you today?
+                            </div>
+                        </div>
                     </div>
 
                     <div class="chip-container">
-                        <span class="chip" onclick="setQuestion('was her afternoon blood pressure medication given today?')">Afternoon BP Medication?</span>
-                        <span class="chip" onclick="setQuestion('what medication did she take today and when?')">Today's Medication Log</span>
-                        <span class="chip" onclick="setQuestion('has she seemed confused or anxious lately?')">Confusion / Mood Log</span>
-                        <span class="chip" onclick="setQuestion('when is her next doctor appointment scheduled?')">Next Doctor Appointment</span>
+                        <span class="chip" onclick="sendChipQuestion('Was her afternoon blood pressure medication given today?')">Afternoon BP Medication?</span>
+                        <span class="chip" onclick="sendChipQuestion('Was there any blood pressure medication discrepancy today?')">Check Lisinopril Conflict</span>
+                        <span class="chip" onclick="sendChipQuestion('What medication did she take today and when?')">Today's Medication Log</span>
+                        <span class="chip" onclick="sendChipQuestion('Has she seemed confused or anxious lately?')">Mood & Observations</span>
                     </div>
 
-                    <button type="submit" class="btn" id="ask-btn">Synthesize Answer</button>
-                </form>
-
-                <div id="answer-box" class="answer-box">
-                    <div class="answer-header" id="answer-header">Synthesized Response</div>
-                    <div class="answer-content" id="answer-content"></div>
+                    <form id="chat-form" class="chat-form">
+                        <input type="text" id="chat-input" class="chat-input" placeholder="Ask a question about Grandma Chen's care..." required autocomplete="off">
+                        <button type="submit" class="btn-send" id="chat-send-btn">Send ↵</button>
+                    </form>
                 </div>
             </div>
 
@@ -634,12 +760,12 @@
     const DEV_DRAWER = document.getElementById('dev-drawer');
     const NOTES_LIST = document.getElementById('notes-list');
     const FEED_COUNT = document.getElementById('feed-count');
-    const ASK_FORM = document.getElementById('ask-form');
-    const QUESTION_INPUT = document.getElementById('question-input');
-    const ASK_BTN = document.getElementById('ask-btn');
-    const ANSWER_BOX = document.getElementById('answer-box');
-    const ANSWER_HEADER = document.getElementById('answer-header');
-    const ANSWER_CONTENT = document.getElementById('answer-content');
+    
+    const CHAT_HISTORY = document.getElementById('chat-history');
+    const CHAT_FORM = document.getElementById('chat-form');
+    const CHAT_INPUT = document.getElementById('chat-input');
+    const CHAT_SEND_BTN = document.getElementById('chat-send-btn');
+    const SIMULATE_BTN = document.getElementById('simulate-btn');
 
     const NOTE_FORM = document.getElementById('note-form');
     const CAREGIVER_INPUT = document.getElementById('caregiver-input');
@@ -652,9 +778,127 @@
         DEV_DRAWER.classList.toggle('open');
     }
 
-    function setQuestion(text) {
-        QUESTION_INPUT.value = text;
-        submitQuestion();
+    function scrollToBottom() {
+        CHAT_HISTORY.scrollTop = CHAT_HISTORY.scrollHeight;
+    }
+
+    function appendMessage(role, content, hasConflict = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chat-msg ${role}`;
+        if (hasConflict) msgDiv.classList.add('has-conflict');
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'msg-meta';
+        if (role === 'user') {
+            metaDiv.innerHTML = '<span>👤 You</span>';
+        } else {
+            metaDiv.innerHTML = '<span>👵 Coordinator Assistant</span>';
+        }
+
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'msg-bubble';
+
+        if (role === 'assistant') {
+            let innerHtml = '';
+            if (hasConflict) {
+                innerHtml += '<div class="conflict-banner">⚠️ Discrepancy / Mismatch Flagged</div>';
+            }
+            if (window.marked) {
+                innerHtml += marked.parse(content);
+            } else {
+                innerHtml += escapeHtml(content);
+            }
+            bubbleDiv.innerHTML = innerHtml;
+        } else {
+            bubbleDiv.innerText = content;
+        }
+
+        msgDiv.appendChild(metaDiv);
+        msgDiv.appendChild(bubbleDiv);
+        CHAT_HISTORY.appendChild(msgDiv);
+        scrollToBottom();
+
+        return msgDiv;
+    }
+
+    async function sendChatMessage(question) {
+        if (!question) return;
+
+        appendMessage('user', question);
+        CHAT_INPUT.value = '';
+        CHAT_SEND_BTN.disabled = true;
+
+        // Add typing indicator
+        const typingMsg = document.createElement('div');
+        typingMsg.className = 'chat-msg assistant';
+        typingMsg.innerHTML = `
+            <div class="msg-meta"><span>👵 Coordinator Assistant</span></div>
+            <div class="msg-bubble" style="color: #64748b; font-style: italic;">
+                Synthesizing answer from care records...
+            </div>
+        `;
+        CHAT_HISTORY.appendChild(typingMsg);
+        scrollToBottom();
+
+        try {
+            const res = await fetch('/api/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question })
+            });
+            const data = await res.json();
+
+            // Remove typing indicator
+            if (typingMsg.parentNode) CHAT_HISTORY.removeChild(typingMsg);
+
+            if (!res.ok) throw new Error(data.message || 'Failed to generate answer');
+
+            const lowerAnswer = data.answer.toLowerCase();
+            const hasConflict = lowerAnswer.includes('mismatch') || lowerAnswer.includes('heads-up') || lowerAnswer.includes('discrepancy') || lowerAnswer.includes('conflicting') || lowerAnswer.includes('conflict');
+
+            appendMessage('assistant', data.answer, hasConflict);
+
+        } catch (err) {
+            if (typingMsg.parentNode) CHAT_HISTORY.removeChild(typingMsg);
+            appendMessage('assistant', `Error processing question: ${err.message}`);
+        } finally {
+            CHAT_SEND_BTN.disabled = false;
+            CHAT_INPUT.focus();
+        }
+    }
+
+    function sendChipQuestion(questionText) {
+        sendChatMessage(questionText);
+    }
+
+    CHAT_FORM.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = CHAT_INPUT.value.trim();
+        if (text) sendChatMessage(text);
+    });
+
+    async function runLiveSimulation() {
+        SIMULATE_BTN.disabled = true;
+        SIMULATE_BTN.innerHTML = '<span>⏳ Simulating Activity...</span>';
+
+        try {
+            const res = await fetch('/api/simulate', { method: 'POST' });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.message || 'Simulation failed');
+
+            // Refresh notes feed immediately
+            await fetchNotes();
+
+            // Append simulation notification message to chat history
+            appendMessage('assistant', `⚡ **Live activity batch simulated successfully!**\n\nInserted 4 new caregiver notes into Grandma Chen's memory record, including an updated care plan order from Dr. Evelyn Vance and an administration log from Caregiver Mark.\n\n*Try asking me:* **"Was there any blood pressure medication discrepancy today?"**`);
+
+        } catch (err) {
+            alert(`Simulation Error: ${err.message}`);
+        } finally {
+            SIMULATE_BTN.disabled = false;
+            SIMULATE_BTN.innerHTML = '<span>⚡ Simulate Live Activity</span>';
+        }
     }
 
     async function fetchNotes() {
@@ -662,7 +906,7 @@
             const res = await fetch('/api/notes');
             if (!res.ok) throw new Error('Failed to fetch notes');
             const data = await res.json();
-            
+
             if (data.conversation_id) {
                 CID_DISPLAY.innerText = data.conversation_id;
             }
@@ -702,56 +946,6 @@
         }).join('');
     }
 
-    async function submitQuestion() {
-        const question = QUESTION_INPUT.value.trim();
-        if (!question) return;
-
-        ASK_BTN.disabled = true;
-        ASK_BTN.innerText = 'Synthesizing Answer...';
-        ANSWER_BOX.classList.remove('active', 'has-conflict');
-        ANSWER_CONTENT.innerHTML = '';
-
-        try {
-            const res = await fetch('/api/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question })
-            });
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.message || 'Failed to generate answer');
-
-            // Render formatted Markdown if marked library loaded, else raw text
-            if (window.marked) {
-                ANSWER_CONTENT.innerHTML = marked.parse(data.answer);
-            } else {
-                ANSWER_CONTENT.innerText = data.answer;
-            }
-
-            ANSWER_BOX.classList.add('active');
-
-            // Detect if response contains discrepancy warning/heads-up
-            const lowerAnswer = data.answer.toLowerCase();
-            if (lowerAnswer.includes('mismatch') || lowerAnswer.includes('heads-up') || lowerAnswer.includes('discrepancy')) {
-                ANSWER_BOX.classList.add('has-conflict');
-                ANSWER_HEADER.innerText = '⚠️ Discrepancy / Mismatch Flagged';
-            } else {
-                ANSWER_HEADER.innerText = 'Synthesized Response';
-            }
-        } catch (err) {
-            ANSWER_CONTENT.innerText = `Error: ${err.message}`;
-            ANSWER_BOX.classList.add('active');
-        } finally {
-            ASK_BTN.disabled = false;
-            ASK_BTN.innerText = 'Synthesize Answer';
-        }
-    }
-
-    ASK_FORM.addEventListener('submit', (e) => {
-        e.preventDefault();
-        submitQuestion();
-    });
-
     NOTE_FORM.addEventListener('submit', async (e) => {
         e.preventDefault();
         const caregiver_name = CAREGIVER_INPUT.value.trim();
@@ -778,7 +972,7 @@
             NOTE_STATUS.innerText = 'Caregiver note successfully saved.';
             NOTE_STATUS.className = 'status-toast success';
             CONTENT_INPUT.value = '';
-            
+
             // Refresh feed immediately
             fetchNotes();
         } catch (err) {
