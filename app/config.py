@@ -41,7 +41,17 @@ SAGEMAKER_ENDPOINT_NAME = get_sagemaker_endpoint_name()
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1024"))
 EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "local").lower().strip()
 
+# Database Mode & Cloud configuration
+DB_MODE = os.getenv("DB_MODE", "local").lower().strip()
+COCKROACH_CLOUD_URL = os.getenv("COCKROACH_CLOUD_URL", "")
+
+# MCP Configuration
+COCKROACHDB_MCP_API_KEY = os.getenv("COCKROACHDB_MCP_API_KEY", "")
+COCKROACHDB_CLUSTER_ID = os.getenv("COCKROACHDB_CLUSTER_ID", "cdbaws")
+COCKROACHDB_MCP_URL = os.getenv("COCKROACHDB_MCP_URL", "https://cockroachlabs.cloud/mcp")
+
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
+
 

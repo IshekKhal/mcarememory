@@ -231,6 +231,47 @@ python scripts/teardown_embedding_endpoint.py
 ```
 *Expected Output*: Deletes SageMaker endpoint and endpoint config to prevent incurring AWS charges.
 
+---
+
+## Milestone 11: CockroachDB Cloud Migration, Dataset Consolidation & MCP Integration
+
+### 1. Consolidate Local Dataset Across Scale Runs
+```bash
+python scripts/consolidate_dataset.py
+```
+*Expected Output*: Merges local scale run data into a consolidated dataset (5,884 messages, 5,984 embeddings) with zero duplicate records.
+
+### 2. Migrate Schema and Data to CockroachDB Cloud (`cdbaws`)
+```bash
+python scripts/migrate_to_cloud.py
+```
+*Expected Output*: Creates tables and vector indexes on CockroachDB Cloud cluster (`cdbaws`) and streams all messages and embeddings.
+
+### 3. Reconcile Cloud Dataset Row Counts
+```bash
+python scripts/reconcile_dataset_counts.py
+```
+*Expected Output*: Verifies 100% row count match between local database and CockroachDB Cloud.
+
+### 4. Verify C-SPANN Vector Index Usage (`EXPLAIN`)
+```bash
+python scripts/verify_cloud_explain.py
+```
+*Expected Output*: Displays EXPLAIN output confirming C-SPANN index scan (`memory_embeddings_embedding_idx`) on CockroachDB Cloud.
+
+### 5. Test CockroachDB Cloud MCP Tool Discovery & SQL Execution
+```bash
+python scripts/test_mcp_discovery.py
+```
+*Expected Output*: Discovers 12 MCP tools, auto-resolves cluster UUID (`a60f9d0e-5826-4029-98d2-6d8fb0f92e94`), and executes test query.
+
+### 6. Run Full Coordinator Agent Q&A Suite via Cloud MCP (`DB_MODE=cloud-mcp`)
+```bash
+DB_MODE=cloud-mcp python scripts/verify_cloud_mcp.py
+```
+*Expected Output*: Executes 6 caregiver questions through `CockroachCloudMCPClient` using `https://cockroachlabs.cloud/mcp`, confirming conflict detection, resolution retrieval, synthesized answers, and medical safety guardrails.
+
+
 
 
 
