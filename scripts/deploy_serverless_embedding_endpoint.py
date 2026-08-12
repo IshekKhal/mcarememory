@@ -147,6 +147,7 @@ def deploy_serverless_endpoint(
             mb_kwargs["role_arn"] = role_arn
 
         model_builder = ModelBuilder.from_jumpstart_config(**mb_kwargs)
+        core_model = model_builder.build(model_name=f"{MODEL_ID}-model")
         
         serverless_config = ServerlessInferenceConfig(
             memory_size_in_mb=memory_mb,
