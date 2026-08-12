@@ -7,16 +7,11 @@ os.environ["DB_MODE"] = "cloud-mcp"
 # Ensure app module is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from app.config import ACTIVE_CONVERSATION_ID
 from app.coordinator_agent import answer_caregiver_question
 
 def load_active_conversation_id() -> str:
-    id_filepath = os.path.join(os.path.dirname(__file__), "..", "active_conversation.id")
-    if os.path.exists(id_filepath):
-        with open(id_filepath, "r") as f:
-            cid = f.read().strip()
-            if cid:
-                return cid
-    return None
+    return ACTIVE_CONVERSATION_ID
 
 def verify_cloud_mcp():
     cid = load_active_conversation_id()

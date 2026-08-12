@@ -28,25 +28,10 @@ app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path="")
 
 
 def get_active_conversation_id() -> str:
-    """Loads saved conversation ID from active_conversation.id file or creates a new conversation."""
-    if os.path.exists(ID_FILEPATH):
-        try:
-            with open(ID_FILEPATH, "r") as f:
-                cid = f.read().strip()
-                if cid:
-                    return cid
-        except Exception as e:
-            logger.warning(f"Could not read active_conversation.id: {e}")
+    """Loads saved conversation ID from centralized config (app.config.ACTIVE_CONVERSATION_ID)."""
+    from app.config import ACTIVE_CONVERSATION_ID
+    return ACTIVE_CONVERSATION_ID
 
-    logger.info("No active conversation ID found. Creating a new conversation...")
-    cid = create_conversation(agent_id="multi_caregiver_memory_v1")
-    try:
-        with open(ID_FILEPATH, "w") as f:
-            f.write(cid)
-        logger.info(f"Saved new conversation ID {cid} to {ID_FILEPATH}")
-    except Exception as e:
-        logger.error(f"Failed to write active_conversation.id: {e}")
-    return cid
 
 
 @app.route("/")

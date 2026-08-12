@@ -54,4 +54,22 @@ COCKROACHDB_MCP_URL = os.getenv("COCKROACHDB_MCP_URL", "https://cockroachlabs.cl
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
 
+# Active Conversation Configuration
+def load_active_conversation_id() -> str:
+    env_cid = os.getenv("ACTIVE_CONVERSATION_ID")
+    if env_cid and env_cid.strip():
+        return env_cid.strip()
+    id_filepath = os.path.join(os.path.dirname(__file__), "..", "active_conversation.id")
+    if os.path.exists(id_filepath):
+        try:
+            with open(id_filepath, "r") as f:
+                cid = f.read().strip()
+                if cid:
+                    return cid
+        except Exception:
+            pass
+    return "327dff0c-19f4-49db-b1c0-01aa51fc7594"
+
+ACTIVE_CONVERSATION_ID = load_active_conversation_id()
+
 
