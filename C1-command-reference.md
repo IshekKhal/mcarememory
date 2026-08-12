@@ -287,3 +287,58 @@ python scripts/verify_cloud_mcp.py
 ```
 *Expected Output*: Confirms 1 active conversation on Cloud (`327dff0c-19f4-49db-b1c0-01aa51fc7594` with 5,884 notes and 5,984 embeddings) and verifies synthesized natural-language responses without robotic phrasing tics.
 
+---
+
+## Milestone 12: Web UI Chat Revamp, Live Simulation, & Render Hosting
+
+### 1. Run Local Web App with Revamped Chat Interface
+```bash
+python app/web_server.py
+```
+*Expected Output*: Starts Flask web server at `http://localhost:5000`. Browser displays scrolling back-and-forth chat history (`#chat-history`) with user and assistant bubbles, markdown synthesis, preset chips, live activity simulation button, and live caregiver memory feed.
+
+### 2. Verify Health Check Endpoint
+```bash
+curl http://localhost:5000/healthz
+```
+*Expected Output*: Instant HTTP 200 response `{"status": "ok"}` with zero database or AI calls.
+
+### 3. Run Live Simulation & Conflict Detection Verification
+- Open `http://localhost:5000` in browser.
+- Click **⚡ Simulate Live Activity** button in the app header (or run `curl -X POST http://localhost:5000/api/simulate`).
+- *Expected Output*: Inserts 4 new realistic caregiver notes (including a conflicting pair: Dr. Vance's order for Lisinopril 20mg vs Caregiver Mark's administration of Lisinopril 10mg) into CockroachDB. Notes immediately appear in the **Live Care Record** feed.
+- Ask the chat: *"Was there any blood pressure medication discrepancy today?"*
+- *Expected Output*: Coordinator agent detects the conflict in real time and highlights the mismatch between Dr. Vance's 20mg order and Caregiver Mark's 10mg administration with an amber discrepancy banner.
+
+### 4. Deploying to Render (Free Tier)
+1. Log into your Render account at [dashboard.render.com](https://dashboard.render.com).
+2. Click **New +** -> **Web Service**.
+3. Connect your GitHub repository (`IshekKhal/mcarememory`).
+4. Render will automatically detect `render.yaml`, or you can manually set:
+   - **Name**: `grandma-chen-care-coordinator`
+   - **Runtime**: `Python`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app.web_server:app`
+   - **Health Check Path**: `/healthz`
+5. Configure Environment Variables in Render Dashboard under **Environment**:
+   - `DATABASE_URL` (CockroachDB connection string, e.g. `postgresql://user:pass@host:26257/defaultdb?sslmode=verify-full`)
+   - `ANTHROPIC_API_KEY` (Your Anthropic Claude API key)
+   - `AWS_REGION` (`us-east-1`)
+   - `AWS_ACCESS_KEY_ID` (AWS Access Key for SageMaker Serverless endpoint)
+   - `AWS_SECRET_ACCESS_KEY` (AWS Secret Key)
+   - `ACTIVE_CONVERSATION_ID` (`327dff0c-19f4-49db-b1c0-01aa51fc7594` or default active conversation ID)
+   - `DB_MODE` (`cloud` or `local`)
+6. Click **Deploy Web Service**.
+
+### 5. Keep-Alive Uptime Monitor Setup (UptimeRobot)
+Render free instances sleep after 15 minutes of inactivity. Keep your instance permanently active with a free uptime monitor:
+1. Create a free account at [uptimerobot.com](https://uptimerobot.com).
+2. Click **Add New Monitor**.
+3. Configure settings:
+   - **Monitor Type**: `HTTP(s)`
+   - **Friendly Name**: `Grandma Chen Care Coordinator Health`
+   - **URL / IP**: `https://your-render-app-name.onrender.com/healthz`
+   - **Monitoring Interval**: `Every 10 minutes` (or 5 minutes)
+4. Click **Create Monitor**. UptimeRobot will ping `/healthz` every 10 minutes, preventing Render from sleeping without incurring database/AI costs.
+
+
