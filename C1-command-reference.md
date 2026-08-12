@@ -276,3 +276,14 @@ python scripts/verify_cloud_mcp.py
 python scripts/deploy_serverless_embedding_endpoint.py
 ```
 *Expected Output*: Deploys BGE-large-en-v1.5 to SageMaker Serverless Inference via raw `boto3` (`CreateModel`, `CreateEndpointConfig`, `CreateEndpoint`) with 4096MB memory and max concurrency 10. Scales to 0 when idle ($0/hr idle cost). The auto-safety-timer has been removed from this script so the serverless endpoint remains persistently live for the hackathon judging window.
+
+### 8. Dataset Identity & Humanized Coordinator Agent Verification
+```bash
+# Verify CockroachDB Cloud conversation dataset identity (Target ID: 327dff0c-19f4-49db-b1c0-01aa51fc7594 with 5,884 notes)
+python -c "import os; os.environ['DB_MODE']='cloud'; from scripts.reconcile_dataset_counts import reconcile_dataset_counts; reconcile_dataset_counts()"
+
+# Execute humanized 6-question suite via Cloud MCP (verifying direct tone, specific named attribution, no em dashes, no repetitive tics)
+python scripts/verify_cloud_mcp.py
+```
+*Expected Output*: Confirms 1 active conversation on Cloud (`327dff0c-19f4-49db-b1c0-01aa51fc7594` with 5,884 notes and 5,984 embeddings) and verifies synthesized natural-language responses without robotic phrasing tics.
+
