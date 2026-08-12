@@ -271,6 +271,13 @@ DB_MODE=cloud-mcp python scripts/verify_cloud_mcp.py
 ```
 *Expected Output*: Executes 6 caregiver questions through `CockroachCloudMCPClient` using `https://cockroachlabs.cloud/mcp`, confirming conflict detection, resolution retrieval, synthesized answers, and medical safety guardrails.
 
+### 7. Deploy BGE-large-en-v1.5 to SageMaker Serverless Inference
+```bash
+python scripts/deploy_serverless_embedding_endpoint.py
+```
+*Expected Output*: Deploys BGE-large-en-v1.5 to SageMaker Serverless Inference with 4096MB memory and zero idle cost.
+
+
 
 
 
