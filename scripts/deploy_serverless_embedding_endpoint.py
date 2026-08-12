@@ -129,7 +129,13 @@ def deploy_serverless_endpoint(
     try:
         from sagemaker.serve.model_builder import ModelBuilder
         from sagemaker.core.jumpstart.configs import JumpStartConfig
-        from sagemaker.models.serverless import ServerlessInferenceConfig
+        try:
+            from sagemaker.core.serverless_inference_config import ServerlessInferenceConfig
+        except ImportError:
+            try:
+                from sagemaker.serve.serverless.serverless_inference_config import ServerlessInferenceConfig
+            except ImportError:
+                from sagemaker.serverless import ServerlessInferenceConfig
 
         print("\n[1/3] Initializing JumpStart model via SageMaker ModelBuilder...")
         jumpstart_config = JumpStartConfig(model_id=MODEL_ID)
