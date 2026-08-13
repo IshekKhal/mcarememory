@@ -411,6 +411,37 @@ python scripts/run_step5_verification.py
 ```
 *Expected Output*: Runs flagship conflict question 5x in a row, verifies Nurse Jennifer Lisinopril query (single note with timing typo described), executes full 6-question suite, and confirms final row counts (3,348 messages / 3,448 embeddings).
 
+---
+
+## Milestone 15: Content-Based Message Verification & Dynamic EXPLAIN Scale Audit
+
+### 1. Content-Based Message Verification Queries (psycopg / SQL)
+```sql
+-- Query 1: Nurse Sarah's flagship note (post-deduplication)
+SELECT message_id, created_at, content 
+FROM messages 
+WHERE conversation_id = '327dff0c-19f4-49db-b1c0-01aa51fc7594' 
+  AND caregiver_name ILIKE '%Sarah%' 
+  AND (content ILIKE '%pill box%' OR content ILIKE '%pillbox%') 
+  AND content ILIKE '%missed%';
+-- Result: 1 row found (message_id: f2329738-654b-459a-8e2b-fd54eca45785)
+
+-- Query 2: David's vegetable soup note (post-deduplication)
+SELECT message_id, created_at, content 
+FROM messages 
+WHERE conversation_id = '327dff0c-19f4-49db-b1c0-01aa51fc7594' 
+  AND caregiver_name ILIKE '%David%' 
+  AND content ILIKE '%vegetable soup%';
+-- Result: 1 row found (message_id: 154f35ef-7a46-4659-a888-e252e4fdfdd8)
+```
+
+### 2. Run Dynamic EXPLAIN Verification on CockroachDB Cloud
+```bash
+python scripts/verify_cloud_explain.py
+```
+*Expected Output*: Dynamically fetches current cloud embedding count (3,448) and verifies vector search plan using C-SPANN index (`memory_embeddings@idx_memory_embeddings`) at exact current scale (`3,448-note scale`).
+
+
 
 
 

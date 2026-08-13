@@ -87,7 +87,7 @@ def verify_cloud_explain():
             print("-" * 80)
             print("C-SPANN VECTOR INDEX VERIFICATION RESULT:")
             if has_vector_index:
-                print("  ✓ PASS: C-SPANN Vector Index ('idx_memory_embeddings') is ACTIVE and used by CockroachDB Cloud optimizer at 5,000+ note scale!")
+                print(f"  ✓ PASS: C-SPANN Vector Index ('idx_memory_embeddings') is ACTIVE and used by CockroachDB Cloud optimizer at {count:,}-note scale!")
             else:
                 print("  ⚠ NOTICE: Plan output generated above.")
             print("=" * 80)
