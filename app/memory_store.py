@@ -320,6 +320,7 @@ def recall_relevant_notes(
                         "resolves_note_ids": [str(x) for x in r[6]] if len(r) > 6 and r[6] else []
                     })
 
+        results = deduplicate_retrieved_notes(results)
         metrics = {
             "embed_latency_ms": embed_ms,
             "raw_sql_latency_ms": raw_sql_ms,
@@ -369,6 +370,7 @@ def recall_relevant_notes(
                         "resolves_note_ids": [str(x) for x in row[6]] if row[6] else []
                     })
                     
+            results = deduplicate_retrieved_notes(results)
             metrics = {
                 "embed_latency_ms": embed_ms,
                 "raw_sql_latency_ms": raw_sql_ms,
@@ -378,6 +380,24 @@ def recall_relevant_notes(
             if return_metrics:
                 return results, metrics
             return results
+
+def deduplicate_retrieved_notes(notes: list[dict]) -> list[dict]:
+    """
+    Permanent retrieval-layer safeguard:
+    Drops any note sharing identical (caregiver_name, content) with one
+    already in the result set, keeping only the earliest matching note.
+    """
+    deduped = []
+    seen_keys = set()
+    for note in notes:
+        cname = (note.get("caregiver_name") or "").strip()
+        content = (note.get("content") or "").strip()
+        key = (cname, content)
+        if key not in seen_keys:
+            seen_keys.add(key)
+            deduped.append(note)
+    return deduped
+
 
 def get_caregiver_notes(conversation_id: str) -> list[dict]:
     """
