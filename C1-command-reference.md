@@ -321,7 +321,7 @@ curl http://localhost:5000/healthz
    - **Start Command**: `gunicorn app.web_server:app`
    - **Health Check Path**: `/healthz`
 5. Configure Environment Variables in Render Dashboard under **Environment**:
-   - `DATABASE_URL` (CockroachDB connection string, e.g. `postgresql://user:pass@host:26257/defaultdb?sslmode=verify-full`)
+   - `COCKROACH_CLOUD_URL` (CockroachDB Cloud connection string, e.g. `postgresql://user:pass@host:26257/defaultdb?sslmode=verify-full`)
    - `ANTHROPIC_API_KEY` (Your Anthropic Claude API key)
    - `AWS_REGION` (`ap-south-1`)
    - `AWS_ACCESS_KEY_ID` (AWS Access Key for SageMaker Serverless endpoint)
