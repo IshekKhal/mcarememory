@@ -143,11 +143,15 @@ SIMULATION_BATCHES = [
 ]
 
 
+# WARNING: This endpoint writes real, permanent notes to the live demo conversation.
+# It should ONLY be triggered intentionally (e.g. by a judge or during live filming/demo),
+# NOT during routine testing or automated scripts.
 @app.route("/api/simulate", methods=["POST"])
 def simulate_live_activity():
     """Generates and inserts a batch of realistic caregiver notes in real time including a conflicting pair."""
     try:
-        cid = get_active_conversation_id()
+        data = request.get_json(silent=True) or {}
+        cid = data.get("conversation_id") or get_active_conversation_id()
         inserted_notes = []
 
         for note in SIMULATION_BATCHES:

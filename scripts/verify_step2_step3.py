@@ -19,28 +19,32 @@ def run_verification():
     print(f"Target Active Conversation ID: {cid}\n")
     
     # -------------------------------------------------------------------------
-    # STEP 2: Live simulation against real production dataset (5,884+ notes)
+    # STEP 2: Live simulation against a separate throwaway conversation
     # -------------------------------------------------------------------------
-    print("--- STEP 2: Re-verifying /api/simulate against real production conversation ---")
+    from app.memory_store import create_conversation
+    test_cid = create_conversation(agent_id="test_simulation_throwaway")
+    
+    print("--- STEP 2: Re-verifying /api/simulate against throwaway conversation ---")
+    print(f"[NOTICE] Running simulation against separate throwaway conversation ID: {test_cid} (preserving live demo conversation {cid})")
     print("Connecting to CockroachDB...")
     
     with get_connection() as conn:
         with conn.cursor() as cur:
-            print("Querying baseline message and embedding counts...")
-            cur.execute("SELECT COUNT(*) FROM messages WHERE conversation_id = %s;", (cid,))
+            print("Querying baseline message and embedding counts for throwaway conversation...")
+            cur.execute("SELECT COUNT(*) FROM messages WHERE conversation_id = %s;", (test_cid,))
             count_before = cur.fetchone()[0]
             
-            cur.execute("SELECT COUNT(*) FROM memory_embeddings WHERE conversation_id = %s;", (cid,))
+            cur.execute("SELECT COUNT(*) FROM memory_embeddings WHERE conversation_id = %s;", (test_cid,))
             emb_before = cur.fetchone()[0]
             
-    print(f"BEFORE SIMULATION: Note Count = {count_before}, Embedding Count = {emb_before}")
+    print(f"BEFORE SIMULATION (throwaway): Note Count = {count_before}, Embedding Count = {emb_before}")
     
-    print(f"\nSimulating {len(SIMULATION_BATCHES)} live caregiver notes into conversation {cid}...")
+    print(f"\nSimulating {len(SIMULATION_BATCHES)} live caregiver notes into throwaway conversation {test_cid}...")
     start_sim = time.time()
     inserted_notes = []
     for note in SIMULATION_BATCHES:
         msg_id = add_caregiver_note(
-            conversation_id=cid,
+            conversation_id=test_cid,
             caregiver_name=note["caregiver_name"],
             content=note["content"],
             note_type=note["note_type"]
@@ -51,14 +55,14 @@ def run_verification():
     
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM messages WHERE conversation_id = %s;", (cid,))
+            cur.execute("SELECT COUNT(*) FROM messages WHERE conversation_id = %s;", (test_cid,))
             count_after = cur.fetchone()[0]
             
-            cur.execute("SELECT COUNT(*) FROM memory_embeddings WHERE conversation_id = %s;", (cid,))
+            cur.execute("SELECT COUNT(*) FROM memory_embeddings WHERE conversation_id = %s;", (test_cid,))
             emb_after = cur.fetchone()[0]
 
-    print(f"AFTER SIMULATION:  Note Count = {count_after}, Embedding Count = {emb_after}")
-    print(f"Delta: +{count_after - count_before} notes successfully added.")
+    print(f"AFTER SIMULATION (throwaway):  Note Count = {count_after}, Embedding Count = {emb_after}")
+    print(f"Delta: +{count_after - count_before} notes successfully added to throwaway conversation {test_cid}.")
     
     question = "Was there any blood pressure medication discrepancy today?"
     print(f"\nSynthesizing follow-up ask response for: '{question}'...")
