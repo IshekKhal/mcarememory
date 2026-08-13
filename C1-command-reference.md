@@ -341,4 +341,43 @@ Render free instances sleep after 15 minutes of inactivity. Keep your instance p
    - **Monitoring Interval**: `Every 10 minutes` (or 5 minutes)
 4. Click **Create Monitor**. UptimeRobot will ping `/healthz` every 10 minutes, preventing Render from sleeping without incurring database/AI costs.
 
+---
+
+## Milestone 13: Region Fix Verification, Production-Scale Simulation, & Fact Re-Check
+
+### 1. Verify AWS Region Configuration across Repo
+```bash
+# Ensure no hardcoded us-east-1 remains in application or config files
+grep -rn "us-east-1" app/ render.yaml C1-command-reference.md
+```
+*Expected Output*: Zero matches. All AWS region defaults configured to `ap-south-1`.
+
+### 2. Run Production-Scale Simulation & Fact Re-Check Script
+```bash
+# Verifies /api/simulate against 5,884+ note active conversation and executes direct SQL fact queries
+python scripts/verify_step2_step3.py
+```
+*Expected Output*:
+- Captures note & embedding count before and after `/api/simulate` (+4 delta on 5,884+ notes).
+- Synthesizes conflict-aware answer via `/api/ask`.
+- Executes direct SQL queries against `messages` table for Jennifer Lisinopril entries and David vegetable soup entries.
+
+### 3. Direct SQL Fact Audit Queries (CockroachDB CLI / psycopg2)
+```sql
+-- Query 1: Jennifer blood pressure / Lisinopril timing notes
+SELECT message_id, caregiver_name, note_type, content, created_at
+FROM messages
+WHERE conversation_id = '327dff0c-19f4-49db-b1c0-01aa51fc7594'
+  AND (caregiver_name ILIKE '%Jennifer%' OR content ILIKE '%Jennifer%' OR content ILIKE '%Lisinopril%' OR content ILIKE '%blood pressure%')
+ORDER BY created_at ASC;
+
+-- Query 2: David vegetable soup / food notes
+SELECT message_id, caregiver_name, note_type, content, created_at
+FROM messages
+WHERE conversation_id = '327dff0c-19f4-49db-b1c0-01aa51fc7594'
+  AND (content ILIKE '%soup%' OR content ILIKE '%vegetable%' OR (caregiver_name ILIKE '%David%' AND content ILIKE '%food%'))
+ORDER BY created_at ASC;
+```
+
+
 
