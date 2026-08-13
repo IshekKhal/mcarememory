@@ -55,90 +55,81 @@ def get_sagemaker_runtime_client():
 def _generate_embedding_sagemaker(clean_text: str) -> list[float]:
     """Generates a 1024-dimensional embedding vector via SageMaker endpoint."""
     endpoint_name = get_sagemaker_endpoint_name()
+    client = get_sagemaker_runtime_client()
     
-    payload = {
-        "text_inputs": [clean_text],
-        "mode": "embedding"
-    }
+    payloads_to_try = [
+        {"inputs": clean_text},
+        {"inputs": [clean_text]},
+        {"text_inputs": [clean_text], "mode": "embedding"},
+        {"text_inputs": clean_text, "mode": "embedding"}
+    ]
     
-    try:
-        client = get_sagemaker_runtime_client()
-        response = client.invoke_endpoint(
-            EndpointName=endpoint_name,
-            ContentType="application/json",
-            Accept="application/json",
-            Body=json.dumps(payload)
-        )
-        
-        raw_body = response["Body"].read().decode("utf-8")
-        response_data = json.loads(raw_body)
-        
-        # Parse vector from SageMaker response
-        embedding = None
-        if isinstance(response_data, dict):
-            for key in ["embedding", "vectors", "predictions"]:
-                if key in response_data:
-                    val = response_data[key]
-                    if isinstance(val, list) and len(val) > 0 and isinstance(val[0], list):
-                        embedding = val[0]
-                    elif isinstance(val, list):
-                        embedding = val
-                    break
-        elif isinstance(response_data, list):
-            if len(response_data) > 0 and isinstance(response_data[0], list):
-                embedding = response_data[0]
-            elif len(response_data) > 0 and isinstance(response_data[0], (float, int)):
-                embedding = response_data
+    response_data = None
+    last_exception = None
 
-        if embedding is None:
-            raise RuntimeError(f"Could not parse embedding vector from SageMaker response. Raw output structure: {type(response_data)}")
-            
-        if len(embedding) != EMBEDDING_DIMENSION:
-            raise RuntimeError(f"Expected embedding dimension of {EMBEDDING_DIMENSION}, but received {len(embedding)} dimensions.")
-            
-        return [float(x) for x in embedding]
+    for payload in payloads_to_try:
+        try:
+            response = client.invoke_endpoint(
+                EndpointName=endpoint_name,
+                ContentType="application/json",
+                Accept="application/json",
+                Body=json.dumps(payload)
+            )
+            raw_body = response["Body"].read().decode("utf-8")
+            response_data = json.loads(raw_body)
+            break
+        except ClientError as e:
+            last_exception = e
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code == "ModelError" or "400" in str(e):
+                continue
+            raise
 
-    except NoCredentialsError as e:
-        err_msg = (
-            "AWS Credentials not found. Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
-            "environment variables, or configure AWS credentials via AWS CLI/profile."
-        )
-        logger.error(err_msg)
-        raise RuntimeError(err_msg) from e
-
-    except EndpointConnectionError as e:
-        err_msg = (
-            f"Could not connect to SageMaker endpoint '{endpoint_name}' in region '{AWS_REGION}'. "
-            "Please check network connectivity or confirm the endpoint region."
-        )
-        logger.error(err_msg)
-        raise RuntimeError(err_msg) from e
-
-    except ClientError as e:
-        error_code = e.response.get("Error", {}).get("Code", "Unknown")
-        error_msg = e.response.get("Error", {}).get("Message", str(e))
-        
-        if error_code == "ValidationError" or "Could not resolve" in error_msg:
-            msg = f"SageMaker endpoint '{endpoint_name}' not found or not in 'InService' state in region '{AWS_REGION}'. Please deploy the endpoint first using scripts/deploy_embedding_endpoint.py."
-        elif error_code == "AccessDeniedException":
-            msg = f"Access denied invoking SageMaker endpoint '{endpoint_name}'. Ensure your IAM role/user has 'sagemaker:InvokeEndpoint' permissions."
-        elif error_code == "ModelError":
+    if response_data is None:
+        if last_exception:
+            error_code = last_exception.response.get("Error", {}).get("Code", "Unknown")
+            error_msg = last_exception.response.get("Error", {}).get("Message", str(last_exception))
             msg = f"SageMaker model error during inference on endpoint '{endpoint_name}': {error_msg}"
-        else:
-            msg = f"SageMaker ClientError [{error_code}]: {error_msg}"
-            
-        logger.error(msg)
-        raise RuntimeError(msg) from e
+            logger.error(msg)
+            raise RuntimeError(msg) from last_exception
+        raise RuntimeError(f"SageMaker endpoint '{endpoint_name}' returned no response data.")
 
-    except BotoCoreError as e:
-        err_msg = f"BotoCore error invoking SageMaker endpoint '{endpoint_name}': {e}"
-        logger.error(err_msg)
-        raise RuntimeError(err_msg) from e
+    # Parse vector from SageMaker response
+    embedding = None
+    if isinstance(response_data, dict):
+        for key in ["embedding", "vectors", "predictions", "embeddings"]:
+            if key in response_data:
+                response_data = response_data[key]
+                break
 
-    except Exception as e:
-        err_msg = f"Unexpected error during embedding generation via SageMaker: {e}"
-        logger.error(err_msg)
-        raise RuntimeError(err_msg) from e
+    if isinstance(response_data, list):
+        elem = response_data
+        while isinstance(elem, list) and len(elem) > 0 and isinstance(elem[0], list):
+            if len(elem[0]) == EMBEDDING_DIMENSION:
+                elem = elem[0]
+                break
+            else:
+                num_tokens = len(elem)
+                dim = len(elem[0])
+                mean_vec = [0.0] * dim
+                for tok in elem:
+                    for d_idx in range(dim):
+                        mean_vec[d_idx] += tok[d_idx]
+                elem = [val / num_tokens for val in mean_vec]
+                break
+
+        if isinstance(elem, list) and len(elem) == EMBEDDING_DIMENSION:
+            embedding = elem
+        elif isinstance(elem, list) and len(elem) > 0 and isinstance(elem[0], (float, int)):
+            embedding = elem
+
+    if embedding is None:
+        raise RuntimeError(f"Could not parse embedding vector from SageMaker response. Raw output structure: {type(response_data)}")
+        
+    if len(embedding) != EMBEDDING_DIMENSION:
+        raise RuntimeError(f"Expected embedding dimension of {EMBEDDING_DIMENSION}, but received {len(embedding)} dimensions.")
+        
+    return [float(x) for x in embedding]
 
 def _generate_embeddings_batch_sagemaker(texts: list[str], batch_size: int = 32) -> list[list[float]]:
     """Generates 1024-dimensional embedding vectors for a batch of input texts using SageMaker."""
@@ -153,37 +144,37 @@ def _generate_embeddings_batch_sagemaker(texts: list[str], batch_size: int = 32)
         chunk_raw = texts[i:i + batch_size]
         chunk = [t.strip() if t and t.strip() else "general note" for t in chunk_raw]
 
-        payload = {
-            "text_inputs": chunk,
-            "mode": "embedding"
-        }
+        payloads_to_try = [
+            {"inputs": chunk},
+            {"text_inputs": chunk, "mode": "embedding"}
+        ]
 
-        try:
-            response = client.invoke_endpoint(
-                EndpointName=endpoint_name,
-                ContentType="application/json",
-                Accept="application/json",
-                Body=json.dumps(payload)
-            )
-            raw_body = response["Body"].read().decode("utf-8")
-            response_data = json.loads(raw_body)
+        chunk_vectors = None
+        for payload in payloads_to_try:
+            try:
+                response = client.invoke_endpoint(
+                    EndpointName=endpoint_name,
+                    ContentType="application/json",
+                    Accept="application/json",
+                    Body=json.dumps(payload)
+                )
+                raw_body = response["Body"].read().decode("utf-8")
+                response_data = json.loads(raw_body)
 
-            chunk_vectors = None
-            if isinstance(response_data, dict):
-                for key in ["embedding", "vectors", "predictions"]:
-                    if key in response_data:
-                        chunk_vectors = response_data[key]
-                        break
-            elif isinstance(response_data, list):
-                chunk_vectors = response_data
+                if isinstance(response_data, dict):
+                    for key in ["embedding", "vectors", "predictions", "embeddings"]:
+                        if key in response_data:
+                            chunk_vectors = response_data[key]
+                            break
+                elif isinstance(response_data, list):
+                    chunk_vectors = response_data
+                break
+            except Exception:
+                continue
 
-            if isinstance(chunk_vectors, list) and len(chunk_vectors) == len(chunk):
-                all_embeddings.extend(chunk_vectors)
-            else:
-                for t in chunk:
-                    all_embeddings.append(_generate_embedding_sagemaker(t))
-        except Exception as e:
-            logger.warning(f"Batch embedding invocation failed for chunk (size {len(chunk)}): {e}. Falling back to single requests.")
+        if isinstance(chunk_vectors, list) and len(chunk_vectors) == len(chunk):
+            all_embeddings.extend(chunk_vectors)
+        else:
             for t in chunk:
                 all_embeddings.append(_generate_embedding_sagemaker(t))
 
