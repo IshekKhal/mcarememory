@@ -323,7 +323,7 @@ curl http://localhost:5000/healthz
 5. Configure Environment Variables in Render Dashboard under **Environment**:
    - `DATABASE_URL` (CockroachDB connection string, e.g. `postgresql://user:pass@host:26257/defaultdb?sslmode=verify-full`)
    - `ANTHROPIC_API_KEY` (Your Anthropic Claude API key)
-   - `AWS_REGION` (`us-east-1`)
+   - `AWS_REGION` (`ap-south-1`)
    - `AWS_ACCESS_KEY_ID` (AWS Access Key for SageMaker Serverless endpoint)
    - `AWS_SECRET_ACCESS_KEY` (AWS Secret Key)
    - `ACTIVE_CONVERSATION_ID` (`327dff0c-19f4-49db-b1c0-01aa51fc7594` or default active conversation ID)
