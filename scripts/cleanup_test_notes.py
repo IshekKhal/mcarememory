@@ -82,13 +82,14 @@ def cleanup():
             
             print(f"\nAFTER CLEANUP:")
             print(f"  Deleted {deleted_msgs} message rows and {deleted_embs} embedding rows.")
-            print(f"  Messages Count: {msg_after} (Expected: 5884)")
-            print(f"  Embeddings Count: {emb_after} (Expected: 5984)")
+            print(f"  Messages Count: {msg_after} (Expected: 3348)")
+            print(f"  Embeddings Count: {emb_after} (Expected: 3448)")
             
-            if msg_after == 5884 and emb_after == 5984:
+            if msg_after == 3348 and emb_after == 3448:
                 print("\n[SUCCESS] Note count and embedding count successfully restored to baseline!")
             else:
-                print(f"\n[WARNING] Count mismatch: expected (5884, 5984), got ({msg_after}, {emb_after})")
+                print(f"\n[WARNING] Count mismatch: expected (3348, 3448), got ({msg_after}, {emb_after})")
+
                 
     print("=" * 80)
 

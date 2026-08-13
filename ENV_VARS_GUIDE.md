@@ -16,4 +16,4 @@ This guide explains every environment variable used in the Grandma Chen Care Coo
 | `COCKROACHDB_MCP_API_KEY` | Authenticates your app when querying CockroachDB through the Model Context Protocol (MCP) server. | CockroachDB Cloud Dashboard under Service Accounts -> API Keys. | MCP, Local App | No | Yes |
 | `ANTHROPIC_API_KEY` | Authenticates requests to Anthropic Claude for synthesizing human-like responses. | Anthropic Console under API Keys. | Local App, Render | Yes | No |
 | `ANTHROPIC_MODEL` | Specifies which Claude AI model version generates caregiver answers. | Set to `claude-haiku-4-5-20251001` or desired Claude model name. | Local App, Render | Yes | No |
-| `ACTIVE_CONVERSATION_ID` | Specifies the active dataset conversation UUID loaded by default when the web interface boots. | CockroachDB conversation ID string (e.g. `cdbaws_mcarememory_20260812_v1`). | Local App, Render | Yes | No |
+| `ACTIVE_CONVERSATION_ID` | Specifies the active dataset conversation UUID loaded by default when the web interface boots. | CockroachDB conversation ID string (e.g. `327dff0c-19f4-49db-b1c0-01aa51fc7594`). | Local App, Render | Yes | No |

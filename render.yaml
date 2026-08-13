@@ -10,8 +10,16 @@ services:
     envVars:
       - key: COCKROACH_CLOUD_URL
         sync: false
+      - key: DB_MODE
+        value: cloud
+      - key: EMBEDDING_MODE
+        value: sagemaker
+      - key: SAGEMAKER_ENDPOINT_NAME
+        value: caregiver-bge-embeddings
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-4-5-20251001
       - key: AWS_REGION
         value: ap-south-1
       - key: AWS_ACCESS_KEY_ID
@@ -19,4 +27,6 @@ services:
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
       - key: ACTIVE_CONVERSATION_ID
-        value: cdbaws_mcarememory_20260812_v1
+        value: 327dff0c-19f4-49db-b1c0-01aa51fc7594
+
+

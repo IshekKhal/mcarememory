@@ -379,5 +379,38 @@ WHERE conversation_id = '327dff0c-19f4-49db-b1c0-01aa51fc7594'
 ORDER BY created_at ASC;
 ```
 
+---
+
+## Milestone 14: Flagship Retrieval Fix, Full Dataset Deduplication, & Gateway Safeguard
+
+### 1. Maria's Note Reword & SageMaker Embedding Regeneration
+```bash
+python scripts/apply_note_reword.py
+```
+*Expected Output*: Updates `message_id: 9990a8de-e074-4002-a5e8-c8c9fac19f16` in `messages` and `memory_embeddings` to `"Gave Grandma Chen her afternoon blood pressure medication booster (Amlodipine 5mg) at 2:00 PM with a glass of water after her nap."` and regenerates its 1024-dim embedding via SageMaker.
+
+### 2. Full Dataset Deduplication & Safety Cross-Reference
+```bash
+# Dry run scan and safeguard cross-reference
+python scripts/deduplicate_dataset.py
+
+# Execute chunked deletion (2,536 duplicate rows removed)
+python scripts/deduplicate_dataset.py --execute
+```
+*Expected Output*: Identifies 676 duplicate groups, verifies safeguard message IDs (Maria, Nurse Sarah, Nurse Jennifer, David), and executes chunked deletion across `memory_embeddings` and `messages`. Reduces dataset to **3,348 unique messages** and **3,448 embeddings**.
+
+### 3. Re-Verify Vector Index Scan (`EXPLAIN`) at Deduplicated Scale
+```bash
+python scripts/verify_cloud_explain.py
+```
+*Expected Output*: Confirms `vector search` using C-SPANN index (`memory_embeddings@idx_memory_embeddings`) on CockroachDB Cloud at 3,448 embedding scale.
+
+### 4. Run Full Re-Verification Suite
+```bash
+python scripts/run_step5_verification.py
+```
+*Expected Output*: Runs flagship conflict question 5x in a row, verifies Nurse Jennifer Lisinopril query (single note with timing typo described), executes full 6-question suite, and confirms final row counts (3,348 messages / 3,448 embeddings).
+
+
 
 
