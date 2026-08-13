@@ -11,10 +11,7 @@ COCKROACH_URL = os.getenv(
 )
 
 # AWS configuration
-AWS_REGION = os.getenv(
-    "AWS_REGION",
-    os.getenv("AWS_DEFAULT_REGION", "ap-south-1")
-)
+AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
 def get_sagemaker_endpoint_name() -> str:
     """
