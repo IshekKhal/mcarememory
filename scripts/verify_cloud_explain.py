@@ -7,7 +7,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from app.config import COCKROACH_CLOUD_URL
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 def load_active_cid() -> str:
+
     id_filepath = os.path.join(os.path.dirname(__file__), "..", "active_conversation.id")
     if os.path.exists(id_filepath):
         with open(id_filepath, "r") as f:
