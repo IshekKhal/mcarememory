@@ -104,24 +104,28 @@ def _generate_embedding_sagemaker(clean_text: str) -> list[float]:
 
     if isinstance(response_data, list):
         elem = response_data
-        while isinstance(elem, list) and len(elem) > 0 and isinstance(elem[0], list):
-            if len(elem[0]) == EMBEDDING_DIMENSION:
-                elem = elem[0]
-                break
-            else:
+        # Unwrap batch dimension: [[tokens...]] -> [tokens...]
+        # HF feature-extraction returns [batch][tokens][dims] — 3D
+        # Keep unwrapping single-element outer lists until we reach the token level
+        while isinstance(elem, list) and len(elem) == 1 and isinstance(elem[0], list):
+            elem = elem[0]
+
+        # Now elem is either:
+        #   a) [float, float, ...] — already a 1D embedding vector (1024 floats)
+        #   b) [[float, float, ...], [float, float, ...], ...] — token-level embeddings needing mean-pool
+        if isinstance(elem, list) and len(elem) > 0:
+            if isinstance(elem[0], (float, int)):
+                # Already a flat vector
+                embedding = elem
+            elif isinstance(elem[0], list) and len(elem[0]) > 0 and isinstance(elem[0][0], (float, int)):
+                # Token-level embeddings: mean-pool across tokens
                 num_tokens = len(elem)
                 dim = len(elem[0])
                 mean_vec = [0.0] * dim
                 for tok in elem:
                     for d_idx in range(dim):
                         mean_vec[d_idx] += tok[d_idx]
-                elem = [val / num_tokens for val in mean_vec]
-                break
-
-        if isinstance(elem, list) and len(elem) == EMBEDDING_DIMENSION:
-            embedding = elem
-        elif isinstance(elem, list) and len(elem) > 0 and isinstance(elem[0], (float, int)):
-            embedding = elem
+                embedding = [val / num_tokens for val in mean_vec]
 
     if embedding is None:
         raise RuntimeError(f"Could not parse embedding vector from SageMaker response. Raw output structure: {type(response_data)}")
