@@ -12,8 +12,8 @@ def get_connection():
         url = COCKROACH_CLOUD_URL
         if "sslmode=verify-full" in url and "sslrootcert=" not in url:
             url = url.replace("sslmode=verify-full", "sslmode=require")
-        return psycopg.connect(url)
-    return psycopg.connect(COCKROACH_URL)
+        return psycopg.connect(url, connect_timeout=10)
+    return psycopg.connect(COCKROACH_URL, connect_timeout=10)
 
 def create_conversation(agent_id: str = "caregiver_assistant") -> str:
     """

@@ -42,8 +42,8 @@ EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1024"))
 EMBEDDING_MODE = os.getenv("EMBEDDING_MODE", "local").lower().strip()
 
 # Database Mode & Cloud configuration
-DB_MODE = os.getenv("DB_MODE", "local").lower().strip()
 COCKROACH_CLOUD_URL = os.getenv("COCKROACH_CLOUD_URL", "")
+DB_MODE = os.getenv("DB_MODE", "cloud" if COCKROACH_CLOUD_URL else "local").lower().strip()
 
 # MCP Configuration
 COCKROACHDB_MCP_API_KEY = os.getenv("COCKROACHDB_MCP_API_KEY", "")

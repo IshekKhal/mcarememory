@@ -22,9 +22,11 @@ def run_verification():
     # STEP 2: Live simulation against real production dataset (5,884+ notes)
     # -------------------------------------------------------------------------
     print("--- STEP 2: Re-verifying /api/simulate against real production conversation ---")
+    print("Connecting to CockroachDB...")
     
     with get_connection() as conn:
         with conn.cursor() as cur:
+            print("Querying baseline message and embedding counts...")
             cur.execute("SELECT COUNT(*) FROM messages WHERE conversation_id = %s;", (cid,))
             count_before = cur.fetchone()[0]
             
