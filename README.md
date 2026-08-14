@@ -89,6 +89,10 @@ The production database is populated with an active care dataset:
 │   ├── mcp_client.py         # CockroachDB Cloud MCP JSON-RPC client
 │   ├── memory_store.py       # SQL queries, vector search & deduplication gateway
 │   └── web_server.py         # Flask application routes and API endpoints
+├── docs/
+│   ├── C1-command-reference.md       # Comprehensive milestone command cheat sheet
+│   ├── ENV_VARS_GUIDE.md             # Plain-language environment variables guide
+│   └── ENV_VARS_AUDIT.md             # Repository-wide environment variable audit
 ├── schema/
 │   ├── 001_agent_memory.sql          # Base relational and vector schema
 │   ├── 002_resize_embeddings_1024.sql # Vector dimension resize migration
@@ -101,7 +105,8 @@ The production database is populated with an active care dataset:
 │   ├── verify_cloud_explain.py      # EXPLAIN query validator for C-SPANN index
 │   ├── verify_cloud_mcp.py          # Full 6-question benchmark test via Cloud MCP
 │   ├── verify_step2_step3.py        # Scale simulation and exact fact audit
-│   └── teardown_embedding_endpoint.py # AWS resource cleanup utility
+│   ├── teardown_embedding_endpoint.py # AWS resource cleanup utility
+│   └── dev-history/                 # Archived verification and diagnostic scripts
 ├── static/
 │   ├── index.html            # Web interface layout
 │   ├── app.js                # Chat stream and memory feed controller
@@ -142,7 +147,7 @@ pip install -r requirements.txt
 
 ### 2. Configure Environment Variables
 
-Copy `.env.example` to `.env` and fill in your credentials:
+Copy `.env.example` to `.env` and fill in your credentials (for details on each variable, see [docs/ENV_VARS_GUIDE.md](docs/ENV_VARS_GUIDE.md) and [docs/ENV_VARS_AUDIT.md](docs/ENV_VARS_AUDIT.md)):
 
 ```bash
 cp .env.example .env
@@ -195,6 +200,8 @@ Open `http://localhost:5000` in your browser to interact with the care coordinat
 ---
 
 ## Running Verification Tests
+
+For milestone-by-milestone terminal commands and full execution history, see [docs/C1-command-reference.md](docs/C1-command-reference.md).
 
 ### Test Vector Index Execution (`EXPLAIN`)
 
