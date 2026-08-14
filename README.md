@@ -83,12 +83,13 @@ The production database is populated with an active care dataset:
 ```
 .
 ├── app/
-│   ├── config.py             # Central environment variable configuration
-│   ├── coordinator_agent.py  # Claude Haiku reasoning layer & prompt logic
-│   ├── embeddings.py         # SageMaker BGE embedding client
-│   ├── mcp_client.py         # CockroachDB Cloud MCP JSON-RPC client
-│   ├── memory_store.py       # SQL queries, vector search & deduplication gateway
-│   └── web_server.py         # Flask application routes and API endpoints
+│   ├── __init__.py                   # Package initialization
+│   ├── config.py                     # Central environment variable configuration
+│   ├── coordinator_agent.py          # Claude Haiku reasoning layer & prompt logic
+│   ├── embeddings.py                 # SageMaker BGE embedding client
+│   ├── mcp_client.py                 # CockroachDB Cloud MCP JSON-RPC client
+│   ├── memory_store.py               # SQL queries, vector search & deduplication gateway
+│   └── web_server.py                 # Flask application routes and API endpoints
 ├── docs/
 │   ├── C1-command-reference.md       # Comprehensive milestone command cheat sheet
 │   ├── ENV_VARS_GUIDE.md             # Plain-language environment variables guide
@@ -97,25 +98,37 @@ The production database is populated with an active care dataset:
 │   ├── 001_agent_memory.sql          # Base relational and vector schema
 │   ├── 002_resize_embeddings_1024.sql # Vector dimension resize migration
 │   ├── 003_add_caregiver_note_metadata.sql # Caregiver metadata columns migration
-│   ├── 004_add_conflict_resolution.sql# Schema migration for resolution tracking
+│   ├── 004_add_conflict_resolution.sql # Schema migration for resolution tracking
 │   └── verify_schema.sh              # Automated schema verification script
 ├── scripts/
+│   ├── __init__.py                   # Package initialization
+│   ├── auto_safety_timer.py          # Auto-teardown safety timer for real-time endpoints
+│   ├── consolidate_dataset.py        # Dataset consolidation across conversation IDs
+│   ├── deduplicate_dataset.py        # Dataset audit and duplicate removal tool
+│   ├── demo_ask.py                   # Interactive CLI Q&A coordinator demo
+│   ├── demo_concurrent_writes.py     # Concurrent multi-caregiver write simulation
+│   ├── demo_query.py                 # Semantic vector search query demo
+│   ├── demo_resolve_conflict.py      # Conflict resolution workflow demo
+│   ├── demo_scale_test.py            # Scale performance and latency benchmarking
+│   ├── demo_seed.py                  # Database seeder with baseline caregiver notes
+│   ├── demo_seed_conflict.py         # Seeds conflicting caregiver notes for testing
+│   ├── deploy_embedding_endpoint.py  # Deploys real-time SageMaker BGE endpoint
 │   ├── deploy_serverless_embedding_endpoint.py # Deploys SageMaker serverless BGE endpoint
-│   ├── deduplicate_dataset.py       # Dataset audit and duplicate removal tool
-│   ├── verify_cloud_explain.py      # EXPLAIN query validator for C-SPANN index
-│   ├── verify_cloud_mcp.py          # Full 6-question benchmark test via Cloud MCP
-│   ├── verify_step2_step3.py        # Scale simulation and exact fact audit
+│   ├── migrate_to_cloud.py           # Migration tool from local cluster to CockroachDB Cloud
+│   ├── reconcile_dataset_counts.py   # Reconciles note and embedding counts
 │   ├── teardown_embedding_endpoint.py # AWS resource cleanup utility
-│   └── dev-history/                 # Archived verification and diagnostic scripts
+│   ├── test_mcp_discovery.py         # MCP protocol tool discovery test
+│   ├── verify_cloud_explain.py       # EXPLAIN query validator for C-SPANN index
+│   ├── verify_cloud_mcp.py           # Full 6-question benchmark test via Cloud MCP
+│   └── verify_node_kill_live.py      # Live cluster node kill verification script
 ├── static/
-│   ├── index.html            # Web interface layout
-│   ├── app.js                # Chat stream and memory feed controller
-│   └── style.css             # Healthcare UI theme styling
-├── docker-compose.yml        # Local 3-node CockroachDB cluster configuration
-├── init-cluster.sh           # Raft cluster bootstrap script
-├── verify-node-kill.sh       # Node-kill fault tolerance verification script
-├── render.yaml               # Infrastructure-as-code for Render deployment
-└── requirements.txt          # Python dependencies
+│   ├── index.html                    # Web interface layout
+│   └── app.js                        # Chat stream and memory feed controller
+├── docker-compose.yml                # Local 3-node CockroachDB cluster configuration
+├── init-cluster.sh                   # Raft cluster bootstrap script
+├── verify-node-kill.sh               # Node-kill fault tolerance verification script
+├── render.yaml                       # Infrastructure-as-code for Render deployment
+└── requirements.txt                  # Python dependencies
 ```
 
 ---
