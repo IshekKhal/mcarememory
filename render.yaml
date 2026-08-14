@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app.web_server:app
+    startCommand: gunicorn app.web_server:app --timeout 120
     healthCheckPath: /healthz
     envVars:
       - key: COCKROACH_CLOUD_URL
