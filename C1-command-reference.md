@@ -441,7 +441,48 @@ python scripts/verify_cloud_explain.py
 ```
 *Expected Output*: Dynamically fetches current cloud embedding count (3,448) and verifies vector search plan using C-SPANN index (`memory_embeddings@idx_memory_embeddings`) at exact current scale (`3,448-note scale`).
 
+---
 
+## Milestone 16: Pre-Submission Secret Scan & Git Safety Audit
 
+### 1. Check Untracked Status of Secret-Bearing Files
+```bash
+# Verify .env was never committed in full git history
+git log --all --full-history -- .env
 
+# Verify sensitive state and key files were never committed
+git log --all --full-history -- sagemaker_endpoint.txt active_conversation.id *.pem *.key
+```
+*Expected Output*: Zero output (exit code 0), confirming `.env` and sensitive state files have never been tracked or committed at any point in git history.
+
+### 2. Run Full Git History Secret Pattern Scan (Bash / Grep)
+```bash
+bash -c "git log --all -p | grep -iE 'AKIA|sk-ant|api[_-]?key|secret|password|COCKROACHDB_MCP_API_KEY|ANTHROPIC_API_KEY|AWS_SECRET'"
+```
+*Expected Output*: All matches correspond strictly to documentation variable placeholders, config file definitions (`os.getenv`), and comments. Zero plaintext credentials, private keys, or API tokens committed.
+
+### 3. Exhaustive Regex Secret Scan across Full Git History (Python)
+```bash
+python -c "
+import subprocess, re
+cmd = ['git', 'log', '--all', '-p']
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, encoding='utf-8', errors='replace')
+pattern = re.compile(r'(AKIA[0-9A-Z]{16}|sk-ant-[a-zA-Z0-9_\-]{20,}|api[_-]?key|secret|password|COCKROACHDB_MCP_API_KEY|ANTHROPIC_API_KEY|AWS_SECRET)', re.IGNORECASE)
+matches = [(line.strip()) for line in p.stdout if (line.startswith('+') or line.startswith('-')) and not line.startswith('+++') and not line.startswith('---') and pattern.search(line)]
+p.wait()
+print(f'Total matched diff lines: {len(matches)}')
+"
+```
+*Expected Output*: Displays count of matched diff lines and confirms all entries are template strings or variable names.
+
+---
+
+## Milestone 17: Production README & MIT License Finalization
+
+### 1. Finalize Documentation and Licensing
+```bash
+# Verify finalized README and MIT License status
+git status
+```
+*Expected Output*: Displays clean working tree with finalized `README.md` and `LICENSE` committed and pushed to `main`.
 

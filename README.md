@@ -1,160 +1,242 @@
-# Milestone 1: 3-Node CockroachDB Cluster & Node-Kill Verification
+# Grandma Chen Care Coordinator: Multi-Caregiver Memory & Conflict-Aware Agent
 
-This milestone establishes and verifies a local 3-node CockroachDB cluster using Docker Compose under WSL2/Docker.
+A distributed memory and coordination platform for families and professional caregivers managing care for an aging relative.
 
-## Architecture
+When multiple caregivers (family members, home nurses, visiting physicians) care for an individual, critical observations and medication updates are logged asynchronously across different shifts. Notes get lost, dosage changes cause confusion, and conflicting records create safety risks.
 
-- **Nodes**: 3 containers (`roach1`, `roach2`, `roach3`) attached to a shared Docker bridge network (`roachnet`).
-- **SQL Port**: `26257` (exposed on host from `roach1`).
-- **DB Console UI**: `http://localhost:8080` (exposed on host from `roach1`).
-- **Storage**: Persistent Docker volumes (`roach1_data`, `roach2_data`, `roach3_data`) per node.
-- **CockroachDB Image**: `cockroachdb/cockroach:v25.2.0`.
+This platform provides a centralized, conflict-aware memory store. It records caregiver updates, indexes them with 1024-dimensional semantic vectors, and uses an AI coordinator agent to answer caregiver questions. When caregiver notes contradict one another, the agent flags the discrepancy with named attribution and timestamps rather than silently averaging or guessing the truth.
 
 ---
 
-## Resource Requirements (WSL2 / Docker Desktop)
+## Live Dataset & Current Scale
 
-- **RAM**: Minimum **4 GB** dedicated to WSL2 / Docker daemon (Recommended: 6–8 GB). Each CockroachDB node consumes approximately 0.8 GB – 1.2 GB of RAM under light load.
-- **CPU**: 2 or more CPU cores allocated to WSL2.
-- **Disk Space**: At least 5 GB free disk space for Docker volumes and container images.
+The production database is populated with an active care dataset:
 
----
-
-## Quickstart Instructions
-
-### 1. Bring up the cluster
-Start all 3 CockroachDB nodes in detached mode:
-```bash
-docker compose up -d
-```
-
-### 2. Initialize the cluster
-Run the initialization script to bootstrap raft consensus across the 3 nodes:
-```bash
-bash init-cluster.sh
-```
-*Output will display cluster status and confirm the DB Console is available at `http://localhost:8080`.*
-
-### 3. Run Node-Kill Fault Tolerance Verification
-Execute the node-kill verification script:
-```bash
-bash verify-node-kill.sh
-```
+- **Active Conversation ID**: `327dff0c-19f4-49db-b1c0-01aa51fc7594`
+- **Unique Caregiver Notes**: 3,348 notes
+- **Semantic Vector Embeddings**: 3,448 embeddings
+- **Vector Search Performance**: Sub-15ms query latency on CockroachDB Cloud using distributed C-SPANN vector indexing
 
 ---
 
-## Expected "Pass" Behavior
+## Architecture Overview
 
-When `verify-node-kill.sh` runs successfully:
-1. Database `survival_test` and table `cluster_verification` are created, and an initial record is inserted.
-2. Container `roach2` is forcibly stopped using `docker kill roach2`.
-3. Read and write SQL statements are executed against `roach1`. Because 2 out of 3 nodes (`roach1` & `roach3`) remain active, quorum (2/3 majority) is preserved. **The SQL INSERT and SELECT operations succeed instantly with zero downtime or data loss.**
-4. Container `roach2` is restarted (`docker start roach2`), catch-up replication syncs missing data, and all 3 nodes report `is_live = true` in `cockroach node status`.
-5. Script completes with output: `=== RESULT: PASS ===`.
+```
+ Caregivers & Family (Web UI / API)
+                │
+                ▼
+      Flask / Gunicorn App
+      (Chat History, Memory Stream, Live Simulation)
+         │                       │
+         ▼ (Embeddings)          ▼ (Reasoning & Synthesis)
+ AWS SageMaker Serverless    Anthropic Claude Haiku 4.5
+ (BAAI/bge-large-en-v1.5)    (Conflict Detection & Clinical Guardrails)
+         │                       │
+         └───────────┬───────────┘
+                     │
+                     ▼
+           CockroachDB Cloud
+     (Relational Logs + 1024-dim C-SPANN Vector Index)
+                     │
+             (Optional Tooling)
+     CockroachDB Cloud MCP Server (JSON-RPC)
+```
+
+### Core Components
+
+1. **CockroachDB Cloud (Distributed Relational & Vector Store)**
+   - Stores structured caregiver logs (`conversations`, `messages`, `task_state`, `memory_embeddings`).
+   - Uses native `VECTOR(1024)` data types with C-SPANN approximate nearest neighbor indexes (`idx_memory_embeddings`).
+   - Supports cosine distance ordering (`<=>`) for hybrid semantic and relational filtering.
+   - Includes local 3-node Docker Compose setup with Raft consensus for offline development and fault tolerance testing.
+
+2. **AWS SageMaker Serverless Inference (Embedding Pipeline)**
+   - Hosts `BAAI/bge-large-en-v1.5` generating 1024-dimensional dense float vectors.
+   - Configured for serverless inference (4096 MB memory, concurrency limit 10), scaling to zero when idle ($0/hr idle cost).
+
+3. **Claude Haiku Coordinator Agent (Reasoning Layer)**
+   - Retrieves top-k semantically relevant notes based on question context.
+   - Cross-references caregiver observations to detect contradictory statements (such as conflicting medication dosages or missed schedules).
+   - Formats answers with human-readable timestamps and caregiver names.
+   - Enforces medical safety guardrails: refuses to diagnose conditions or modify treatment plans without physician direction.
+
+4. **CockroachDB Cloud Model Context Protocol (MCP) Server**
+   - Integrates with `https://cockroachlabs.cloud/mcp` for standardized tool discovery and SQL execution over JSON-RPC.
 
 ---
 
-## Resetting / Cleanup
+## Technology Stack
 
-To tear down the cluster and clean up all persistent data volumes:
-```bash
-docker compose down -v
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Database** | CockroachDB Cloud (Serverless) | PostgreSQL-compatible, distributed SQL, C-SPANN vector index |
+| **Embeddings** | AWS SageMaker Serverless | BAAI/bge-large-en-v1.5 (1024 dimensions) |
+| **LLM Reasoning** | Anthropic Claude Haiku | `claude-haiku-4-5-20251001` with structured system prompt |
+| **MCP Integration** | CockroachDB Cloud MCP Server | Model Context Protocol SSE / JSON-RPC endpoint |
+| **Web Service** | Python, Flask, Gunicorn | Lightweight web UI with live chat and caregiver event feed |
+| **Deployment** | Render & Docker Compose | Cloud hosting with `/healthz` endpoint, local 3-node cluster |
+
+---
+
+## Repository Structure
+
+```
+.
+├── app/
+│   ├── config.py             # Central environment variable configuration
+│   ├── coordinator_agent.py  # Claude Haiku reasoning layer & prompt logic
+│   ├── embeddings.py         # SageMaker BGE embedding client
+│   ├── mcp_client.py         # CockroachDB Cloud MCP JSON-RPC client
+│   ├── memory_store.py       # SQL queries, vector search & deduplication gateway
+│   └── web_server.py         # Flask application routes and API endpoints
+├── schema/
+│   ├── 001_agent_memory.sql          # Base relational and vector schema
+│   ├── 002_resize_embeddings_1024.sql # Vector dimension resize migration
+│   ├── 003_add_caregiver_note_metadata.sql # Caregiver metadata columns migration
+│   ├── 004_add_conflict_resolution.sql# Schema migration for resolution tracking
+│   └── verify_schema.sh              # Automated schema verification script
+├── scripts/
+│   ├── deploy_serverless_embedding_endpoint.py # Deploys SageMaker serverless BGE endpoint
+│   ├── deduplicate_dataset.py       # Dataset audit and duplicate removal tool
+│   ├── verify_cloud_explain.py      # EXPLAIN query validator for C-SPANN index
+│   ├── verify_cloud_mcp.py          # Full 6-question benchmark test via Cloud MCP
+│   ├── verify_step2_step3.py        # Scale simulation and exact fact audit
+│   └── teardown_embedding_endpoint.py # AWS resource cleanup utility
+├── static/
+│   ├── index.html            # Web interface layout
+│   ├── app.js                # Chat stream and memory feed controller
+│   └── style.css             # Healthcare UI theme styling
+├── docker-compose.yml        # Local 3-node CockroachDB cluster configuration
+├── init-cluster.sh           # Raft cluster bootstrap script
+├── verify-node-kill.sh       # Node-kill fault tolerance verification script
+├── render.yaml               # Infrastructure-as-code for Render deployment
+└── requirements.txt          # Python dependencies
 ```
 
 ---
 
-# Milestone 2: Memory Schema (Relational + Vector)
+## Setup & Run Instructions
 
-Milestone 2 designs and implements the core memory layer for the autonomous agent in CockroachDB v25.2.0 (`agent_memory` database), combining relational conversation logs, persistent task state, and high-dimensional vector search.
+### Prerequisites
 
-## Schema Architecture & Table Descriptions
+- Python 3.10+
+- Git
+- AWS Account with SageMaker permissions (for embedding endpoint)
+- CockroachDB Cloud account or local Docker Desktop installed
+- Anthropic API Key
 
-The agent's stateful memory system is structured across four primary tables:
-
-- **`conversations`**: Acts as the top-level session ledger, pairing each conversation session with a unique UUID (`conversation_id`), the associated `agent_id`, and a timestamp to bound long-running interactive tasks.
-- **`messages`**: Stores the full relational sequence of raw user and agent dialogue (`role`, `content`, `created_at`), maintaining chronological conversation context and establishing strict foreign key integrity back to `conversations`.
-- **`task_state`**: Tracks in-flight multi-step agent execution state (`status`, `state` JSONB document), allowing an agent to preserve step state and resume execution seamlessly across node crashes or cluster failures without losing progress.
-- **`memory_embeddings`**: Stores 1024-dimensional semantic vector embeddings (`VECTOR(1024)`) produced by Amazon Titan Text Embeddings V2, linking text content back to `conversations` and `messages`, backed by a native distributed C-SPANN vector index (`idx_memory_embeddings`) for high-performance Approximate Nearest Neighbor (ANN) similarity search.
-
-## How to Apply the Schema & Migrations
-
-Ensure the 3-node cluster is running, then apply the SQL schema file:
+### 1. Clone Repository & Create Virtual Environment
 
 ```bash
-cat schema/001_agent_memory.sql | docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257
+git clone https://github.com/IshekKhal/mcarememory.git
+cd mcarememory
+
+python -m venv .venv
+# On Windows (Git Bash / PowerShell):
+source .venv/Scripts/activate
+# On Linux / macOS:
+source .venv/bin/activate
+
+pip install -r requirements.txt
 ```
 
-If migrating an existing cluster running Milestone 2 (1536 dimensions), apply the migration script:
+### 2. Configure Environment Variables
+
+Copy `.env.example` to `.env` and fill in your credentials:
 
 ```bash
-cat schema/002_resize_embeddings_1024.sql | docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257
+cp .env.example .env
 ```
 
-*Note: The migration automatically enables the v25.2 preview setting `feature.vector_index.enabled = true` and configures `sql_safe_updates = false` for vector index creation.*
+Key configuration variables:
 
-## How to Run Schema & Vector Index Verification
+```ini
+# AWS Credentials & Region
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=ap-south-1
 
-To run full automated verification (schema migration, index inspection, relational seeding with 1024-dim vectors, cosine `<=>` similarity ordering, `EXPLAIN` vector index scan validation, and node-kill survival testing against `agent_memory`):
+# CockroachDB Cloud Connection
+COCKROACH_CLOUD_URL=postgresql://user:password@host:26257/defaultdb?sslmode=verify-full
+DB_MODE=cloud
+
+# SageMaker Embedding Endpoint
+EMBEDDING_MODE=sagemaker
+SAGEMAKER_ENDPOINT_NAME=caregiver-bge-embeddings
+
+# Anthropic Claude API
+ANTHROPIC_API_KEY=your_anthropic_api_key
+ANTHROPIC_MODEL=claude-haiku-4-5-20251001
+
+# Active Session
+ACTIVE_CONVERSATION_ID=327dff0c-19f4-49db-b1c0-01aa51fc7594
+```
+
+### 3. Deploy SageMaker Serverless Endpoint (One-Time Setup)
+
+To deploy the persistent serverless embedding endpoint:
 
 ```bash
-bash schema/verify_schema.sh
+python scripts/deploy_serverless_embedding_endpoint.py
 ```
+
+*The serverless endpoint scales to zero when idle.*
+
+### 4. Run the Web Application
+
+Start the local web server:
+
+```bash
+python app/web_server.py
+```
+
+Open `http://localhost:5000` in your browser to interact with the care coordinator, submit caregiver notes, and run live activity simulations.
 
 ---
 
-# Milestone 4: Caregiver Memory Semantic Recall & SageMaker Embedding Pivot
+## Running Verification Tests
 
-Milestone 4 connects the autonomous agent's memory store to a real vector embedding model, storing high-dimensional embeddings for caregiver notes in CockroachDB and performing semantic similarity recall using cosine distance (`<=>`).
+### Test Vector Index Execution (`EXPLAIN`)
 
-## Architecture & SageMaker Embedding Model
+Verify that queries use the native CockroachDB C-SPANN index scan:
 
-To bypass Bedrock account quota defects, embedding generation is powered by a SageMaker JumpStart hosted **BAAI/bge-large-en-v1.5** model (`huggingface-sentencesimilarity-bge-large-en-v1-5`).
+```bash
+python scripts/verify_cloud_explain.py
+```
 
-- **Vector Dimension**: 1024 float dimensions (exact match for CockroachDB `VECTOR(1024)` column).
-- **Hosting**: SageMaker Endpoint on CPU instance (`ml.m5.xlarge`).
-- **Endpoint State File**: The endpoint deployment script saves the active endpoint name to `sagemaker_endpoint.txt`, which `app/config.py` and `app/embeddings.py` automatically detect.
+### Run Full Coordinator Benchmark Suite
+
+Run the 6-question benchmark evaluating conflict detection, mood synthesis, appointment recall, and medical safety guardrails:
+
+```bash
+python scripts/verify_cloud_mcp.py
+```
+
+### Local Offline Mode (Docker 3-Node Cluster)
+
+To run entirely locally without CockroachDB Cloud:
+
+1. Start the 3-node cluster:
+   ```bash
+   docker compose up -d
+   bash init-cluster.sh
+   ```
+
+2. Apply the schema:
+   ```bash
+   cat schema/001_agent_memory.sql | docker exec -i roach1 ./cockroach sql --insecure --host=roach1:26257
+   ```
+
+3. Run node-kill fault tolerance verification:
+   ```bash
+   bash verify-node-kill.sh
+   ```
 
 ---
 
-## ⚠️ CRITICAL WARNING: SAGEMAKER HOURLY BILLING
+## Key Features & Safety Mechanisms
 
-> [!WARNING]
-> **SageMaker Endpoints Cost Money by the Hour**: Leaving a SageMaker endpoint running incurs ongoing hourly charges on your AWS account. **Always run `python scripts/teardown_embedding_endpoint.py` immediately when you finish testing or demoing.**
-
----
-
-## Execution Order
-
-Follow this exact sequence to run the demo:
-
-### 1. Deploy SageMaker Embedding Endpoint
-Deploy the `bge-large-en-v1.5` model to SageMaker JumpStart:
-```bash
-python scripts/deploy_embedding_endpoint.py
-```
-*Wait for the script to confirm the endpoint status is **InService**.*
-
-### 2. Seed Caregiver Memory Data
-Ingest 9 realistic caregiver notes for "Grandma Chen", compute their 1024-dim BGE embeddings via SageMaker, and persist them in CockroachDB:
-```bash
-python scripts/demo_seed.py
-```
-
-### 3. Run Semantic Query Recall Tests
-Execute semantic vector search queries against CockroachDB:
-```bash
-# Run standard 3-question evaluation suite (medication, mood/anxiety, appointment)
-python scripts/demo_query.py
-
-# Or search with a custom query:
-python scripts/demo_query.py "has Grandma Chen complained of physical pain?"
-```
-
-### 4. Teardown Endpoint (MANDATORY)
-Delete the SageMaker endpoint and endpoint configuration to stop billing:
-```bash
-python scripts/teardown_embedding_endpoint.py
-```
-*Verify that `sagemaker_endpoint.txt` is removed and no endpoints remain active in SageMaker.*
-
-
+- **Conflict Detection**: Detects mismatches in medication dosages, timing, and caregiver instructions across shifts.
+- **Attribution & Timestamps**: Every synthesized answer cites the specific caregiver name and recorded time.
+- **Medical Refusal Guardrail**: If asked for diagnosis or dosage changes, the agent directs caregivers to contact the prescribing physician.
+- **Resilience**: Data persists across database node restarts and network interruptions via CockroachDB distributed consensus.
