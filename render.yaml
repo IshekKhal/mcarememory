@@ -28,5 +28,12 @@ services:
         sync: false
       - key: ACTIVE_CONVERSATION_ID
         value: 327dff0c-19f4-49db-b1c0-01aa51fc7594
+      - key: COCKROACHDB_MCP_API_KEY
+        sync: false
+      - key: COCKROACHDB_MCP_URL
+        value: https://cockroachlabs.cloud/mcp
+      - key: COCKROACHDB_CLUSTER_ID
+        value: a60f9d0e-5826-4029-98d2-6d8fb0f92e94
+
 
 

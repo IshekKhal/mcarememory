@@ -1,5 +1,8 @@
 import os
 import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import psycopg
 from app.config import COCKROACH_CLOUD_URL, ACTIVE_CONVERSATION_ID
 from app.coordinator_agent import answer_caregiver_question

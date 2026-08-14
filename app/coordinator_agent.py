@@ -55,8 +55,10 @@ GUIDELINES:
 def answer_caregiver_question(
     conversation_id: str,
     question: str,
-    k: int = 5
-) -> str:
+    k: int = 5,
+    mode: str | None = None,
+    return_receipt: bool = False
+) -> str | tuple[str, dict]:
     """
     Retrieves top-k relevant caregiver notes for the question, formats them as context,
     and calls the Anthropic Claude API (claude-haiku-4-5-20251001) to synthesize a direct,
@@ -66,12 +68,15 @@ def answer_caregiver_question(
         conversation_id (str): Target conversation UUID.
         question (str): Caregiver query.
         k (int): Number of relevant notes to recall (default: 5).
+        mode (str, optional): Retrieval mode ("sql" or "mcp"). Default is None (uses DB_MODE setting).
+        return_receipt (bool): If True, returns tuple (answer, receipt_dict).
 
     Returns:
-        str: Synthesized answer or error message.
+        str or tuple[str, dict]: Synthesized answer, optionally paired with retrieval receipt metadata.
     """
     if not question or not question.strip():
-        return "[Error] Question cannot be empty."
+        err = "[Error] Question cannot be empty."
+        return (err, {}) if return_receipt else err
 
     if not ANTHROPIC_API_KEY or not ANTHROPIC_API_KEY.strip():
         error_msg = (
@@ -79,19 +84,35 @@ def answer_caregiver_question(
             "Please add ANTHROPIC_API_KEY=your_key to your environment or .env file."
         )
         logger.error(error_msg)
-        return error_msg
+        return (error_msg, {}) if return_receipt else error_msg
 
-    # 1. Recall relevant notes from vector store
+    # 1. Recall relevant notes from vector store with metrics
     try:
-        notes = recall_relevant_notes(conversation_id=conversation_id, question=question, k=k)
+        notes, metrics = recall_relevant_notes(
+            conversation_id=conversation_id,
+            question=question,
+            k=k,
+            return_metrics=True,
+            mode=mode
+        )
     except Exception as e:
         error_msg = f"[Error] Failed to recall memory notes: {e}"
         logger.exception(error_msg)
-        return error_msg
+        return (error_msg, {}) if return_receipt else error_msg
+
+    # Construct safe receipt metadata
+    receipt = {
+        "method_label": metrics.get("method_label", "Direct SQL (CockroachDB Cloud)"),
+        "description": metrics.get("description", "Direct relational query executed via CockroachDB SQL connection."),
+        "latency_ms": round(metrics.get("total_recall_ms", 0.0), 2)
+    }
+    if metrics.get("mode") == "mcp" or metrics.get("cte_restructured"):
+        receipt["cte_restructured"] = metrics.get("cte_restructured", True)
 
     # 2. Handle 0 relevant notes case
     if not notes:
-        return "I don't have any relevant caregiver notes or information about that in my memory store."
+        no_notes_msg = "I don't have any relevant caregiver notes or information about that in my memory store."
+        return (no_notes_msg, receipt) if return_receipt else no_notes_msg
 
     # 3. Format retrieved notes for context
     formatted_notes_list = []
@@ -141,28 +162,30 @@ Remember:
         )
         
         if response and response.content:
-            return response.content[0].text.strip()
+            answer = response.content[0].text.strip()
+            return (answer, receipt) if return_receipt else answer
         else:
-            return "[Error] Received empty response from Anthropic API."
+            err = "[Error] Received empty response from Anthropic API."
+            return (err, receipt) if return_receipt else err
 
     except anthropic.AuthenticationError:
         error_msg = "[Error] Anthropic API authentication failed. Please check if ANTHROPIC_API_KEY is valid."
         logger.error(error_msg)
-        return error_msg
+        return (error_msg, receipt) if return_receipt else error_msg
     except anthropic.RateLimitError:
         error_msg = "[Error] Anthropic API rate limit exceeded. Please wait a moment and try again."
         logger.error(error_msg)
-        return error_msg
+        return (error_msg, receipt) if return_receipt else error_msg
     except anthropic.APIConnectionError as e:
         error_msg = f"[Error] Network connection failed while reaching Anthropic API: {e}"
         logger.error(error_msg)
-        return error_msg
+        return (error_msg, receipt) if return_receipt else error_msg
     except anthropic.APIError as e:
         error_msg = f"[Error] Anthropic API error ({e.status_code}): {e.message}"
         logger.error(error_msg)
-        return error_msg
+        return (error_msg, receipt) if return_receipt else error_msg
     except Exception as e:
         error_msg = f"[Error] Unexpected error during LLM synthesis: {e}"
         logger.exception(error_msg)
-        return error_msg
+        return (error_msg, receipt) if return_receipt else error_msg
 

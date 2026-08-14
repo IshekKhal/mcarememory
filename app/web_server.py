@@ -191,18 +191,29 @@ def ask_question():
         data = request.get_json(silent=True) or {}
         question = data.get("question", "").strip()
         k = data.get("k", 5)
+        mode = (data.get("mode") or "sql").strip().lower()
+        if mode not in ("sql", "mcp"):
+            mode = "sql"
 
         if not question:
             return jsonify({"status": "error", "message": "Question text cannot be empty."}), 400
 
         cid = get_active_conversation_id()
-        answer = answer_caregiver_question(conversation_id=cid, question=question, k=k)
+        answer, receipt = answer_caregiver_question(
+            conversation_id=cid,
+            question=question,
+            k=k,
+            mode=mode,
+            return_receipt=True
+        )
 
         return jsonify({
             "status": "success",
             "conversation_id": cid,
             "question": question,
-            "answer": answer
+            "mode": mode,
+            "answer": answer,
+            "retrieval_receipt": receipt
         }), 200
 
     except Exception as e:

@@ -626,6 +626,204 @@
         }
         .status-toast.success { background-color: var(--emerald-bg); color: var(--emerald-text); border: 1px solid var(--emerald-border); display: block; }
         .status-toast.error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
+
+        /* Retrieval Mode Toggle & Receipt Styling */
+        .mode-toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-elem);
+            padding: 6px 12px;
+            margin-top: 6px;
+        }
+
+        .mode-toggle-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .mode-toggle-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mode-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #ffffff;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mode-btn:hover {
+            color: var(--text-main);
+            border-color: #94a3b8;
+        }
+
+        .mode-btn.active#mode-btn-sql {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #93c5fd;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mode-btn.active#mode-btn-mcp {
+            background-color: #faf5ff;
+            color: #6b21a8;
+            border-color: #c084fc;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .retrieval-receipt {
+            margin-top: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            border: 1px solid #cbd5e1;
+            background-color: #ffffff;
+            overflow: hidden;
+            transition: all 0.15s ease;
+        }
+
+        .retrieval-receipt.receipt-sql {
+            border-color: #93c5fd;
+            background-color: #f0f9ff;
+        }
+
+        .retrieval-receipt.receipt-mcp {
+            border-color: #c084fc;
+            background-color: #faf5ff;
+        }
+
+        .receipt-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+        }
+
+        .receipt-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .receipt-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .receipt-badge.badge-sql {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .receipt-badge.badge-mcp {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .receipt-title {
+            color: var(--text-muted);
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .receipt-latency {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 11px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .receipt-chevron {
+            font-size: 9px;
+            color: var(--text-muted);
+            transition: transform 0.15s ease;
+        }
+
+        .retrieval-receipt[open] .receipt-chevron {
+            transform: rotate(180deg);
+        }
+
+        .receipt-content {
+            padding: 10px 12px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .receipt-key {
+            color: var(--text-muted);
+            font-weight: 500;
+            min-width: 140px;
+        }
+
+        .receipt-val {
+            color: var(--text-main);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .receipt-val.tag-cte {
+            color: #6b21a8;
+            background-color: #f3e8ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .chat-loading-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            padding: 4px 2px;
+            margin-top: 2px;
+        }
+
+        .loading-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e2e8f0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -694,10 +892,27 @@
                         <span class="chip" onclick="sendChipQuestion('Has she seemed confused or anxious lately?')">Mood & Observations</span>
                     </div>
 
+                    <!-- Retrieval Mode Toggle Switch -->
+                    <div class="mode-toggle-container">
+                        <span class="mode-toggle-label">Retrieval Engine:</span>
+                        <div class="mode-toggle-group">
+                            <button type="button" class="mode-btn active" id="mode-btn-sql" onclick="setRetrievalMode('sql')">
+                                <span class="mode-icon">⚡</span> Direct SQL
+                            </button>
+                            <button type="button" class="mode-btn" id="mode-btn-mcp" onclick="setRetrievalMode('mcp')">
+                                <span class="mode-icon">🔌</span> MCP Server
+                            </button>
+                        </div>
+                    </div>
+
                     <form id="chat-form" class="chat-form">
                         <input type="text" id="chat-input" class="chat-input" placeholder="Ask a question about Grandma Chen's care..." required autocomplete="off">
                         <button type="submit" class="btn-send" id="chat-send-btn">Send ↵</button>
                     </form>
+                    <div id="chat-loading-indicator" class="chat-loading-indicator" style="display: none;">
+                        <span class="loading-spinner"></span>
+                        <span id="chat-loading-text" class="loading-text">Querying...</span>
+                    </div>
                 </div>
             </div>
 
@@ -755,245 +970,6 @@
     </div>
 </div>
 
-<script>
-    const CID_DISPLAY = document.getElementById('cid-display');
-    const DEV_DRAWER = document.getElementById('dev-drawer');
-    const NOTES_LIST = document.getElementById('notes-list');
-    const FEED_COUNT = document.getElementById('feed-count');
-    
-    const CHAT_HISTORY = document.getElementById('chat-history');
-    const CHAT_FORM = document.getElementById('chat-form');
-    const CHAT_INPUT = document.getElementById('chat-input');
-    const CHAT_SEND_BTN = document.getElementById('chat-send-btn');
-    const SIMULATE_BTN = document.getElementById('simulate-btn');
-
-    const NOTE_FORM = document.getElementById('note-form');
-    const CAREGIVER_INPUT = document.getElementById('caregiver-input');
-    const TYPE_SELECT = document.getElementById('type-select');
-    const CONTENT_INPUT = document.getElementById('content-input');
-    const NOTE_BTN = document.getElementById('note-btn');
-    const NOTE_STATUS = document.getElementById('note-status');
-
-    function toggleDevDrawer() {
-        DEV_DRAWER.classList.toggle('open');
-    }
-
-    function scrollToBottom() {
-        CHAT_HISTORY.scrollTop = CHAT_HISTORY.scrollHeight;
-    }
-
-    function appendMessage(role, content, hasConflict = false) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-msg ${role}`;
-        if (hasConflict) msgDiv.classList.add('has-conflict');
-
-        const metaDiv = document.createElement('div');
-        metaDiv.className = 'msg-meta';
-        if (role === 'user') {
-            metaDiv.innerHTML = '<span>👤 You</span>';
-        } else {
-            metaDiv.innerHTML = '<span>👵 Coordinator Assistant</span>';
-        }
-
-        const bubbleDiv = document.createElement('div');
-        bubbleDiv.className = 'msg-bubble';
-
-        if (role === 'assistant') {
-            let innerHtml = '';
-            if (hasConflict) {
-                innerHtml += '<div class="conflict-banner">⚠️ Discrepancy / Mismatch Flagged</div>';
-            }
-            if (window.marked) {
-                innerHtml += marked.parse(content);
-            } else {
-                innerHtml += escapeHtml(content);
-            }
-            bubbleDiv.innerHTML = innerHtml;
-        } else {
-            bubbleDiv.innerText = content;
-        }
-
-        msgDiv.appendChild(metaDiv);
-        msgDiv.appendChild(bubbleDiv);
-        CHAT_HISTORY.appendChild(msgDiv);
-        scrollToBottom();
-
-        return msgDiv;
-    }
-
-    async function sendChatMessage(question) {
-        if (!question) return;
-
-        appendMessage('user', question);
-        CHAT_INPUT.value = '';
-        CHAT_SEND_BTN.disabled = true;
-
-        // Add typing indicator
-        const typingMsg = document.createElement('div');
-        typingMsg.className = 'chat-msg assistant';
-        typingMsg.innerHTML = `
-            <div class="msg-meta"><span>👵 Coordinator Assistant</span></div>
-            <div class="msg-bubble" style="color: #64748b; font-style: italic;">
-                Synthesizing answer from care records...
-            </div>
-        `;
-        CHAT_HISTORY.appendChild(typingMsg);
-        scrollToBottom();
-
-        try {
-            const res = await fetch('/api/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question })
-            });
-            const data = await res.json();
-
-            // Remove typing indicator
-            if (typingMsg.parentNode) CHAT_HISTORY.removeChild(typingMsg);
-
-            if (!res.ok) throw new Error(data.message || 'Failed to generate answer');
-
-            const lowerAnswer = data.answer.toLowerCase();
-            const hasConflict = lowerAnswer.includes('mismatch') || lowerAnswer.includes('heads-up') || lowerAnswer.includes('discrepancy') || lowerAnswer.includes('conflicting') || lowerAnswer.includes('conflict');
-
-            appendMessage('assistant', data.answer, hasConflict);
-
-        } catch (err) {
-            if (typingMsg.parentNode) CHAT_HISTORY.removeChild(typingMsg);
-            appendMessage('assistant', `Error processing question: ${err.message}`);
-        } finally {
-            CHAT_SEND_BTN.disabled = false;
-            CHAT_INPUT.focus();
-        }
-    }
-
-    function sendChipQuestion(questionText) {
-        sendChatMessage(questionText);
-    }
-
-    CHAT_FORM.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const text = CHAT_INPUT.value.trim();
-        if (text) sendChatMessage(text);
-    });
-
-    async function runLiveSimulation() {
-        SIMULATE_BTN.disabled = true;
-        SIMULATE_BTN.innerHTML = '<span>⏳ Simulating Activity...</span>';
-
-        try {
-            const res = await fetch('/api/simulate', { method: 'POST' });
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.message || 'Simulation failed');
-
-            // Refresh notes feed immediately
-            await fetchNotes();
-
-            // Append simulation notification message to chat history
-            appendMessage('assistant', `⚡ **Live activity batch simulated successfully!**\n\nInserted 4 new caregiver notes into Grandma Chen's memory record, including an updated care plan order from Dr. Evelyn Vance and an administration log from Caregiver Mark.\n\n*Try asking me:* **"Was there any blood pressure medication discrepancy today?"**`);
-
-        } catch (err) {
-            alert(`Simulation Error: ${err.message}`);
-        } finally {
-            SIMULATE_BTN.disabled = false;
-            SIMULATE_BTN.innerHTML = '<span>⚡ Simulate Live Activity</span>';
-        }
-    }
-
-    async function fetchNotes() {
-        try {
-            const res = await fetch('/api/notes');
-            if (!res.ok) throw new Error('Failed to fetch notes');
-            const data = await res.json();
-
-            if (data.conversation_id) {
-                CID_DISPLAY.innerText = data.conversation_id;
-            }
-
-            FEED_COUNT.innerText = `${data.count || 0} Notes`;
-            renderNotes(data.notes || []);
-        } catch (err) {
-            console.error('Error fetching notes:', err);
-        }
-    }
-
-    function renderNotes(notes) {
-        if (notes.length === 0) {
-            NOTES_LIST.innerHTML = '<div class="empty-feed">No caregiver notes recorded yet.</div>';
-            return;
-        }
-
-        NOTES_LIST.innerHTML = notes.map(note => {
-            const type = (note.note_type || 'general').toLowerCase();
-            const badgeClass = `badge-${type}`;
-            const ts = note.human_timestamp || note.created_at || 'Just now';
-            const initial = (note.caregiver_name || 'C').charAt(0).toUpperCase();
-
-            return `
-                <div class="note-item">
-                    <div class="note-item-header">
-                        <div class="note-meta">
-                            <div class="caregiver-avatar">${initial}</div>
-                            <span class="caregiver-name">${escapeHtml(note.caregiver_name)}</span>
-                            <span class="note-timestamp">• ${escapeHtml(ts)}</span>
-                        </div>
-                        <span class="note-type-badge ${badgeClass}">${escapeHtml(type)}</span>
-                    </div>
-                    <div class="note-content">${escapeHtml(note.content)}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    NOTE_FORM.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const caregiver_name = CAREGIVER_INPUT.value.trim();
-        const note_type = TYPE_SELECT.value;
-        const content = CONTENT_INPUT.value.trim();
-
-        if (!caregiver_name || !content) return;
-
-        NOTE_BTN.disabled = true;
-        NOTE_BTN.innerText = 'Saving Caregiver Note...';
-        NOTE_STATUS.className = 'status-toast';
-        NOTE_STATUS.innerText = '';
-
-        try {
-            const res = await fetch('/api/notes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ caregiver_name, note_type, content })
-            });
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.message || 'Failed to add note');
-
-            NOTE_STATUS.innerText = 'Caregiver note successfully saved.';
-            NOTE_STATUS.className = 'status-toast success';
-            CONTENT_INPUT.value = '';
-
-            // Refresh feed immediately
-            fetchNotes();
-        } catch (err) {
-            NOTE_STATUS.innerText = `Error: ${err.message}`;
-            NOTE_STATUS.className = 'status-toast error';
-        } finally {
-            NOTE_BTN.disabled = false;
-            NOTE_BTN.innerText = 'Save Caregiver Note';
-        }
-    });
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>"']/g, function(m) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-        });
-    }
-
-    // Initial load & 4s polling
-    fetchNotes();
-    setInterval(fetchNotes, 4000);
-</script>
+<script src="app.js"></script>
 </body>
 </html>

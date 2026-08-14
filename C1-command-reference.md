@@ -486,3 +486,42 @@ git status
 ```
 *Expected Output*: Displays clean working tree with finalized `README.md` and `LICENSE` committed and pushed to `main`.
 
+---
+
+## Milestone 18: MCP Retrieval Latency Optimization & Connection Caching
+
+### 1. Profile MCP Retrieval Latency Breakdown
+```bash
+python scripts/test_mcp_latency_diag.py
+```
+*Expected Output*: Displays step-by-step breakdown of SageMaker question embedding, cluster UUID resolution, tool discovery, and vector query execution. Confirms elimination of redundant `list_clusters` and `tools/list` round trips.
+
+### 2. Run Local Multi-Mode Q&A Verification & Secret Scan
+```bash
+python scripts/test_prompt_l.py
+```
+*Expected Output*: Executes 3 questions in `sql` mode (~900-1,100ms), 3 questions in `mcp` mode (~2,550-2,600ms), and the 6-question regression suite. Confirms zero secrets in API payloads, correct receipt metadata, and CTE vector query formatting.
+
+### 3. Run Full 6-Question SQL-Mode Regression Suite
+```bash
+python scripts/run_step5_verification.py
+```
+*Expected Output*: Executes 5x flagship runs, Nurse Jennifer Lisinopril check, and full 6-question verification suite. Confirms 3,348 messages and 3,448 memory embeddings with zero drift.
+
+---
+
+## Milestone 19: UI Loading Indicator & Render MCP Configuration
+
+### 1. Launch Web App & Verify Mode-Aware Loading Indicator
+```bash
+python app/web_server.py
+```
+*Expected Output*: Starts Flask web server at `http://localhost:5000`. Demonstrates inline spinner and mode-specific loading state near the chat input ("Querying..." in SQL mode, "Querying via MCP Server..." in MCP mode) during `/api/ask` execution, which clears upon receipt of the synthesized answer.
+
+### 2. Render Web Service Environment Configuration for MCP
+Configure the following environment variables in Render Dashboard under **Environment** (matching `render.yaml`):
+- `COCKROACHDB_MCP_API_KEY` (`sync: false` — user-managed CockroachDB Cloud MCP API key)
+- `COCKROACHDB_MCP_URL` (`https://cockroachlabs.cloud/mcp` — public fixed endpoint)
+- `COCKROACHDB_CLUSTER_ID` (`a60f9d0e-5826-4029-98d2-6d8fb0f92e94` — CockroachDB Cloud cluster UUID)
+
+

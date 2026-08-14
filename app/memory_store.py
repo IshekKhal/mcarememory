@@ -156,7 +156,8 @@ def recall_relevant_notes(
     question: str,
     k: int = 5,
     query_vector: list[float] | None = None,
-    return_metrics: bool = False
+    return_metrics: bool = False,
+    mode: str | None = None
 ) -> list[dict] | tuple[list[dict], dict]:
     """
     Given a question (or precomputed query_vector), retrieves top-k nearest
@@ -169,6 +170,7 @@ def recall_relevant_notes(
         k (int): Number of top matches to retrieve.
         query_vector (list[float], optional): Optional precomputed 1024-dim embedding.
         return_metrics (bool): If True, returns (results, metrics_dict).
+        mode (str, optional): Retrieval path ("sql" or "mcp"). If None, uses DB_MODE setting.
         
     Returns:
         list[dict] or (list[dict], dict): List of matching note dicts, and optional metrics dict.
@@ -183,6 +185,13 @@ def recall_relevant_notes(
     embed_ms = (time.perf_counter() - t_embed_start) * 1000.0
 
     from app.config import DB_MODE
+
+    if mode is not None:
+        selected_mode = mode.lower().strip()
+    elif DB_MODE == "cloud-mcp":
+        selected_mode = "mcp"
+    else:
+        selected_mode = "sql"
 
     query_vector_str = f"[{','.join(str(f) for f in query_vector)}]"
 
@@ -232,7 +241,7 @@ def recall_relevant_notes(
         WHERE e.conversation_id = %s AND m.note_type = 'resolution';
     """
 
-    if DB_MODE == "cloud-mcp":
+    if selected_mode in ("mcp", "cloud-mcp"):
         # MCP select_query has a 16,384 char limit.
         # A 1024-dim vector literal is ~10K chars, so we use a CTE to reference it only once.
         sql_knn_mcp = """
@@ -253,9 +262,9 @@ def recall_relevant_notes(
             ORDER BY e.distance ASC
             LIMIT %s;
         """
-        from app.mcp_client import CockroachCloudMCPClient
+        from app.mcp_client import get_mcp_client
         t_sql_start = time.perf_counter()
-        client = CockroachCloudMCPClient()
+        client = get_mcp_client()
         raw_rows = client.execute_sql_query(sql_knn_mcp, [query_vector_str_mcp, conversation_id, k])
         res_rows = client.execute_sql_query(sql_resolutions, [conversation_id])
         raw_sql_ms = (time.perf_counter() - t_sql_start) * 1000.0
@@ -322,9 +331,13 @@ def recall_relevant_notes(
 
         results = deduplicate_retrieved_notes(results)
         metrics = {
+            "mode": "mcp",
+            "method_label": "MCP Server (Model Context Protocol, JSON-RPC)",
+            "description": "Query encapsulated in JSON-RPC payload and retrieved via CockroachDB Cloud MCP Server.",
             "embed_latency_ms": embed_ms,
             "raw_sql_latency_ms": raw_sql_ms,
-            "total_recall_ms": embed_ms + raw_sql_ms
+            "total_recall_ms": embed_ms + raw_sql_ms,
+            "cte_restructured": True
         }
         if return_metrics:
             return results, metrics
@@ -372,6 +385,9 @@ def recall_relevant_notes(
                     
             results = deduplicate_retrieved_notes(results)
             metrics = {
+                "mode": "sql",
+                "method_label": "Direct SQL (CockroachDB Cloud)",
+                "description": "Direct relational query executed via CockroachDB SQL connection.",
                 "embed_latency_ms": embed_ms,
                 "raw_sql_latency_ms": raw_sql_ms,
                 "total_recall_ms": embed_ms + raw_sql_ms
