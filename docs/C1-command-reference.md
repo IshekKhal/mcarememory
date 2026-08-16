@@ -548,5 +548,46 @@ python scripts/test_prompt_u.py
 2. Persists a new caregiver note via `/api/notes`, recording row count progression in CockroachDB Cloud (`messages` +1, `memory_embeddings` +1) and validating presence in the Live Memory Stream.
 3. Fires 4 concurrent `/api/ask` requests simultaneously, validating 100% valid JSON responses and zero HTML error fallbacks under concurrent load.
 
+---
+
+## Milestone 21: Two-Page UI Redesign & Instagram-Inspired Design System v2
+
+> [!NOTE]
+> All work in Milestone 21 lives strictly on the `ui-redesign-v2` branch pending Abhishek's local review and approval. Zero changes are merged to `main` and no Render auto-deploys are triggered.
+
+### 1. Two-Page Navigation Architecture (`static/index.html`, `static/app.js`)
+- **Page 1 ("Chat")**: Max-width 720px centered single-column layout containing coordinator assistant conversation, retrieval receipts, prompt chips, mode toggle, warm-up banner, and sticky pill composer.
+- **Page 2 ("Care Log")**: Responsive two-column desktop layout (stacks on mobile <= 960px) containing the "Log Caregiver Note" form with interactive category chips (Medication, Observation, Appointment, General) and live validation, alongside the dedicated "Live Memory Stream" feed.
+- **Top Navigation Bar**: Sticky Instagram-pill tab switcher (`[ 💬 Chat ]  [ 📋 Care Log ]`) with full keyboard navigation (Left/Right Arrow keys, Home/End, Space/Enter activation, and focus rings).
+
+### 2. Design System Tokens & Instagram-DM Chat Pattern (`design-system.md`)
+- **Tokens**: Implemented complete palette (`--color-surface-base`, `--color-surface-muted`, `--color-surface-raised`, `--color-surface-strong`, `--color-accent-primary`, `--color-accent-secondary`, etc.), 8px spacing rhythm (4px to 32px), typography scale, and elevation shadows.
+- **Instagram-DM Bubbles**:
+  - Assistant: Left-aligned, `color.surface.strong` (`#eef1f5`) background, `color.text.primary` (`#1a1d23`) text, `4px 24px 24px 24px` radius.
+  - User: Right-aligned, `color.accent.primary` (`#3b6fe0`) background, white text, `24px 4px 24px 24px` radius.
+  - Retrieval Receipts: Collapsed pill under assistant bubbles with blue border for Direct SQL and purple border for MCP Server, expandable on click.
+- **Prominent Warm-up Banner**:
+  - Full-width banner above the composer that triggers at **3.0 seconds** of pending request latency.
+  - Features an animated pulse dot and clear status message: *"Warming up the AI models — this can take up to a minute on the first question."*
+  - Automatically dismisses upon response arrival.
+
+### 3. Component Interaction States & Accessibility
+- Complete state coverage on every button, input, toggle, chip, and tab (`default`, `hover`, `focus-visible`, `active`, `disabled`, `loading`, `error`).
+- `aria-live="polite"` on chat history, warm-up banner, status badges, and toast notifications.
+- All text meets WCAG 2.2 AA 4.5:1 contrast minimums.
+- 44px minimum tap targets for touch devices.
+
+### 4. Verification & Testing Commands
+```bash
+# Verify local web server and UI
+python app/web_server.py
+
+# Verify backend endpoints and database persistence remain unaffected
+python scripts/test_prompt_u.py
+python scripts/verify_cloud_mcp.py
+```
+*Expected Output*: Web UI runs smoothly at `http://localhost:5000` with clean two-page switching, correct DM bubble shapes, and 100% test pass on backend endpoints.
+
+
 
 
