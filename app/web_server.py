@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 # Ensure project root is in Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -25,6 +26,22 @@ ID_FILEPATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "act
 STATIC_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "static"))
 
 app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path="")
+
+
+@app.errorhandler(Exception)
+def handle_global_exception(e):
+    """Global exception handler ensuring all unhandled errors return JSON instead of default HTML."""
+    code = 500
+    if isinstance(e, HTTPException):
+        code = e.code
+        message = e.description
+    else:
+        message = str(e) or "An internal server error occurred."
+    logger.exception(f"Unhandled exception caught by global error handler: {e}")
+    return jsonify({
+        "status": "error",
+        "message": message
+    }), code
 
 
 def get_active_conversation_id() -> str:

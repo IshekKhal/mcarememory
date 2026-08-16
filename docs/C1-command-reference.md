@@ -524,4 +524,29 @@ Configure the following environment variables in Render Dashboard under **Enviro
 - `COCKROACHDB_MCP_URL` (`https://cockroachlabs.cloud/mcp` — public fixed endpoint)
 - `COCKROACHDB_CLUSTER_ID` (`a60f9d0e-5826-4029-98d2-6d8fb0f92e94` — CockroachDB Cloud cluster UUID)
 
+---
+
+## Milestone 20: Worker Starvation Prevention, UI Spam Guard & Global JSON Error Handling
+
+### 1. Multi-Threaded Gunicorn Configuration (`render.yaml`)
+Configured `startCommand` in `render.yaml` for production deployment:
+```bash
+gunicorn app.web_server:app --workers 1 --threads 4 --worker-class gthread --timeout 120
+```
+*Rationale*: Allocates 4 concurrent worker threads under the `gthread` worker class. Enables `/healthz` monitoring requests to be serviced independently on an available thread even when another worker thread is actively executing a long-running LLM or embedding inference call, eliminating health check timeout starvation.
+
+### 2. Global Flask JSON Error Handler & Frontend Spam Guard
+- **Backend**: Implemented `@app.errorhandler(Exception)` in `app/web_server.py` to capture all unhandled exceptions and route errors, returning structured JSON (`{"status": "error", "message": ...}`) rather than default HTML error pages.
+- **Frontend**: In `static/app.js` and `static/index.html`, inputs (`chat-input`, `chat-send-btn`, chip selectors) are disabled immediately upon dispatch and re-enabled upon response arrival. Responses are checked for `application/json` Content-Type before parsing to eliminate `"Unexpected token"` parse errors. An 8-second timer provides a model warm-up status notice ("Still warming up the AI models — first questions after a quiet period can take up to a minute.") while maintaining the active spinner.
+
+### 3. Run Prompt U Verification Suite (Note Persistence & Concurrency)
+```bash
+python scripts/test_prompt_u.py
+```
+*Expected Output*:
+1. Verifies global error handler returns JSON for 404 routes and 400 bad payloads.
+2. Persists a new caregiver note via `/api/notes`, recording row count progression in CockroachDB Cloud (`messages` +1, `memory_embeddings` +1) and validating presence in the Live Memory Stream.
+3. Fires 4 concurrent `/api/ask` requests simultaneously, validating 100% valid JSON responses and zero HTML error fallbacks under concurrent load.
+
+
 

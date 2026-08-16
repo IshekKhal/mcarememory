@@ -146,15 +146,30 @@ function appendMessage(role, content, hasConflict = false, receipt = null) {
     return msgDiv;
 }
 
+let warmUpTimer = null;
+
 async function sendChatMessage(question) {
     if (!question) return;
 
     appendMessage('user', question);
-    if (CHAT_INPUT) CHAT_INPUT.value = '';
-    if (CHAT_SEND_BTN) CHAT_SEND_BTN.disabled = true;
+    if (CHAT_INPUT) {
+        CHAT_INPUT.value = '';
+        CHAT_INPUT.disabled = true;
+    }
+    if (CHAT_SEND_BTN) {
+        CHAT_SEND_BTN.disabled = true;
+    }
 
     // Show inline loading indicator
     showLoadingIndicator(currentRetrievalMode);
+
+    // Schedule 8-second warmup notice if model inference takes time
+    if (warmUpTimer) clearTimeout(warmUpTimer);
+    warmUpTimer = setTimeout(() => {
+        if (CHAT_LOADING_TEXT && CHAT_LOADING_INDICATOR && CHAT_LOADING_INDICATOR.style.display !== 'none') {
+            CHAT_LOADING_TEXT.innerText = 'Still warming up the AI models — first questions after a quiet period can take up to a minute.';
+        }
+    }, 8000);
 
     // Add typing indicator
     const typingMsg = document.createElement('div');
@@ -174,12 +189,24 @@ async function sendChatMessage(question) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question, mode: currentRetrievalMode })
         });
-        const data = await res.json();
+
+        const contentType = res.headers.get('content-type') || '';
+        let data = null;
+        if (contentType.includes('application/json')) {
+            try {
+                data = await res.json();
+            } catch (parseErr) {
+                data = null;
+            }
+        }
 
         // Remove typing indicator
         if (typingMsg.parentNode) CHAT_HISTORY.removeChild(typingMsg);
 
-        if (!res.ok) throw new Error(data.message || 'Failed to generate answer');
+        if (!res.ok || !data) {
+            const errMsg = (data && data.message) ? data.message : 'Something went wrong — please try again.';
+            throw new Error(errMsg);
+        }
 
         const lowerAnswer = (data.answer || '').toLowerCase();
         const hasConflict = lowerAnswer.includes('mismatch') || lowerAnswer.includes('heads-up') || lowerAnswer.includes('discrepancy') || lowerAnswer.includes('conflicting') || lowerAnswer.includes('conflict');
@@ -188,15 +215,29 @@ async function sendChatMessage(question) {
 
     } catch (err) {
         if (typingMsg.parentNode) CHAT_HISTORY.removeChild(typingMsg);
-        appendMessage('assistant', `Error processing question: ${err.message}`);
+        let errorDisplay = (err && err.message) ? err.message : 'Something went wrong — please try again.';
+        if (errorDisplay.includes('Unexpected token') || errorDisplay.includes('JSON')) {
+            errorDisplay = 'Something went wrong — please try again.';
+        }
+        appendMessage('assistant', errorDisplay);
     } finally {
+        if (warmUpTimer) {
+            clearTimeout(warmUpTimer);
+            warmUpTimer = null;
+        }
         hideLoadingIndicator();
-        if (CHAT_SEND_BTN) CHAT_SEND_BTN.disabled = false;
-        if (CHAT_INPUT) CHAT_INPUT.focus();
+        if (CHAT_INPUT) {
+            CHAT_INPUT.disabled = false;
+            CHAT_INPUT.focus();
+        }
+        if (CHAT_SEND_BTN) {
+            CHAT_SEND_BTN.disabled = false;
+        }
     }
 }
 
 function sendChipQuestion(questionText) {
+    if (CHAT_INPUT && CHAT_INPUT.disabled) return;
     sendChatMessage(questionText);
 }
 
@@ -204,7 +245,7 @@ if (CHAT_FORM) {
     CHAT_FORM.addEventListener('submit', (e) => {
         e.preventDefault();
         const text = CHAT_INPUT.value.trim();
-        if (text) sendChatMessage(text);
+        if (text && !CHAT_INPUT.disabled) sendChatMessage(text);
     });
 }
 
@@ -215,9 +256,19 @@ async function runLiveSimulation() {
 
     try {
         const res = await fetch('/api/simulate', { method: 'POST' });
-        const data = await res.json();
+        const contentType = res.headers.get('content-type') || '';
+        let data = null;
+        if (contentType.includes('application/json')) {
+            try {
+                data = await res.json();
+            } catch (parseErr) {
+                data = null;
+            }
+        }
 
-        if (!res.ok) throw new Error(data.message || 'Simulation failed');
+        if (!res.ok || !data) {
+            throw new Error((data && data.message) || 'Simulation failed — please try again.');
+        }
 
         // Refresh notes feed immediately
         await fetchNotes();
@@ -226,7 +277,11 @@ async function runLiveSimulation() {
         appendMessage('assistant', `⚡ **Live activity batch simulated successfully!**\n\nInserted 4 new caregiver notes into Grandma Chen's memory record, including an updated care plan order from Dr. Evelyn Vance and an administration log from Caregiver Mark.\n\n*Try asking me:* **"Was there any blood pressure medication discrepancy today?"**`);
 
     } catch (err) {
-        alert(`Simulation Error: ${err.message}`);
+        let errorDisplay = (err && err.message) ? err.message : 'Simulation failed — please try again.';
+        if (errorDisplay.includes('Unexpected token') || errorDisplay.includes('JSON')) {
+            errorDisplay = 'Simulation failed — please try again.';
+        }
+        alert(`Simulation Error: ${errorDisplay}`);
     } finally {
         SIMULATE_BTN.disabled = false;
         SIMULATE_BTN.innerHTML = '<span>⚡ Simulate Live Activity</span>';
@@ -236,7 +291,10 @@ async function runLiveSimulation() {
 async function fetchNotes() {
     try {
         const res = await fetch('/api/notes');
-        if (!res.ok) throw new Error('Failed to fetch notes');
+        const contentType = res.headers.get('content-type') || '';
+        if (!res.ok || !contentType.includes('application/json')) {
+            return;
+        }
         const data = await res.json();
 
         if (data.conversation_id && CID_DISPLAY) {
@@ -301,9 +359,19 @@ if (NOTE_FORM) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ caregiver_name, note_type, content })
             });
-            const data = await res.json();
+            const contentType = res.headers.get('content-type') || '';
+            let data = null;
+            if (contentType.includes('application/json')) {
+                try {
+                    data = await res.json();
+                } catch (parseErr) {
+                    data = null;
+                }
+            }
 
-            if (!res.ok) throw new Error(data.message || 'Failed to add note');
+            if (!res.ok || !data) {
+                throw new Error((data && data.message) || 'Failed to add note — please try again.');
+            }
 
             NOTE_STATUS.innerText = 'Caregiver note successfully saved.';
             NOTE_STATUS.className = 'status-toast success';
@@ -312,7 +380,11 @@ if (NOTE_FORM) {
             // Refresh feed immediately
             fetchNotes();
         } catch (err) {
-            NOTE_STATUS.innerText = `Error: ${err.message}`;
+            let errorDisplay = (err && err.message) ? err.message : 'Failed to add note — please try again.';
+            if (errorDisplay.includes('Unexpected token') || errorDisplay.includes('JSON')) {
+                errorDisplay = 'Failed to add note — please try again.';
+            }
+            NOTE_STATUS.innerText = `Error: ${errorDisplay}`;
             NOTE_STATUS.className = 'status-toast error';
         } finally {
             NOTE_BTN.disabled = false;
