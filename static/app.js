@@ -1,4 +1,4 @@
-// Grandma Chen's Care Coordinator - Frontend Logic v2 (Design System v2)
+// Grandma Chen's Care Coordinator - Frontend Logic (Modern Instagram Edition)
 
 let currentRetrievalMode = 'sql';
 let currentActiveTab = 'chat';
@@ -8,16 +8,17 @@ let warmUpTimer = null;
 const CID_DISPLAY = document.getElementById('cid-display');
 const DEV_DRAWER = document.getElementById('dev-drawer');
 const DEV_TOGGLE_BTN = document.getElementById('dev-toggle-btn');
-const NOTES_LIST = document.getElementById('notes-list');
-const FEED_COUNT = document.getElementById('feed-count');
-const NAV_NOTE_COUNT = document.getElementById('nav-note-count');
+const THEME_TOGGLE_BTN = document.getElementById('theme-toggle-btn');
+const VIEW_TITLE = document.getElementById('view-title');
 
 const TAB_CHAT = document.getElementById('tab-chat');
 const TAB_CARELOG = document.getElementById('tab-carelog');
 const VIEW_CHAT = document.getElementById('view-chat');
 const VIEW_CARELOG = document.getElementById('view-carelog');
+const NAV_NOTE_COUNT = document.getElementById('nav-note-count');
 
 const CHAT_HISTORY = document.getElementById('chat-history');
+const CHAT_MESSAGES_CONTAINER = document.getElementById('chat-messages-container');
 const CHAT_FORM = document.getElementById('chat-form');
 const CHAT_INPUT = document.getElementById('chat-input');
 const CHAT_SEND_BTN = document.getElementById('chat-send-btn');
@@ -34,9 +35,49 @@ const CONTENT_INPUT = document.getElementById('content-input');
 const CONTENT_ERROR = document.getElementById('content-error');
 const NOTE_BTN = document.getElementById('note-btn');
 const NOTE_STATUS = document.getElementById('note-status');
+const FEED_COUNT = document.getElementById('feed-count');
+const NOTES_LIST = document.getElementById('notes-list');
 
 // ============================================================================
-// TAB NAVIGATION CONTROLLER (Keyboard-accessible & Instagram-pill style)
+// THEME CONTROLLER (Dark / Light Mode)
+// ============================================================================
+
+const SUN_SVG = `<svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+const MOON_SVG = `<svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+
+function updateThemeIcon(theme) {
+    if (!THEME_TOGGLE_BTN) return;
+    if (theme === 'dark') {
+        THEME_TOGGLE_BTN.innerHTML = SUN_SVG;
+        THEME_TOGGLE_BTN.title = 'Switch to Light Mode';
+    } else {
+        THEME_TOGGLE_BTN.innerHTML = MOON_SVG;
+        THEME_TOGGLE_BTN.title = 'Switch to Dark Mode';
+    }
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('care_coordinator_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    updateThemeIcon(initialTheme);
+}
+
+function toggleThemeMode() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    localStorage.setItem('care_coordinator_theme', nextTheme);
+    updateThemeIcon(nextTheme);
+}
+
+initTheme();
+
+// ============================================================================
+// TAB NAVIGATION CONTROLLER (Sidebar Switcher)
 // ============================================================================
 
 function switchTab(tabName) {
@@ -61,9 +102,13 @@ function switchTab(tabName) {
             VIEW_CARELOG.classList.remove('active');
             VIEW_CARELOG.setAttribute('hidden', '');
         }
+        if (VIEW_TITLE) {
+            VIEW_TITLE.innerText = 'Coordinator Assistant';
+        }
         if (CHAT_INPUT && !CHAT_INPUT.disabled) {
             CHAT_INPUT.focus();
         }
+        scrollToBottom();
     } else {
         if (TAB_CARELOG) {
             TAB_CARELOG.classList.add('active');
@@ -83,27 +128,30 @@ function switchTab(tabName) {
             VIEW_CHAT.classList.remove('active');
             VIEW_CHAT.setAttribute('hidden', '');
         }
+        if (VIEW_TITLE) {
+            VIEW_TITLE.innerText = 'Care Log & Memory Stream';
+        }
         if (CAREGIVER_INPUT && !CAREGIVER_INPUT.disabled) {
             CAREGIVER_INPUT.focus();
         }
     }
 }
 
-// Accessible arrow-key navigation between tabs
-const tabList = document.querySelector('.nav-tabs');
-if (tabList) {
-    tabList.addEventListener('keydown', (e) => {
+// Accessible arrow-key navigation between sidebar tabs
+const sidebarNavList = document.querySelector('.sidebar-nav-list');
+if (sidebarNavList) {
+    sidebarNavList.addEventListener('keydown', (e) => {
         const tabs = [TAB_CHAT, TAB_CARELOG].filter(Boolean);
         const currentIndex = tabs.findIndex(tab => tab === document.activeElement);
         if (currentIndex === -1) return;
 
         let targetIndex = currentIndex;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
             e.preventDefault();
             targetIndex = (currentIndex + 1) % tabs.length;
             tabs[targetIndex].focus();
             switchTab(tabs[targetIndex] === TAB_CARELOG ? 'carelog' : 'chat');
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
             e.preventDefault();
             targetIndex = (currentIndex - 1 + tabs.length) % tabs.length;
             tabs[targetIndex].focus();
@@ -169,7 +217,7 @@ function scrollToBottom() {
 function showLoadingIndicator(mode) {
     if (!CHAT_LOADING_INDICATOR || !CHAT_LOADING_TEXT) return;
     if (mode === 'mcp') {
-        CHAT_LOADING_TEXT.innerText = 'Querying via CockroachDB MCP Server...';
+        CHAT_LOADING_TEXT.innerText = 'Querying via CockroachDB Cloud MCP Server...';
     } else {
         CHAT_LOADING_TEXT.innerText = 'Querying via Direct SQL...';
     }
@@ -183,91 +231,91 @@ function hideLoadingIndicator() {
 }
 
 function appendMessage(role, content, hasConflict = false, receipt = null) {
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `chat-message ${role}`;
-    if (hasConflict) msgDiv.classList.add('has-conflict');
+    const targetContainer = CHAT_MESSAGES_CONTAINER || CHAT_HISTORY;
+    if (!targetContainer) return;
 
-    const senderSpan = document.createElement('span');
-    senderSpan.className = 'msg-sender';
-    senderSpan.innerText = role === 'user' ? '👤 You' : '👵 Coordinator Assistant';
+    const msgRow = document.createElement('div');
+    msgRow.className = `chat-message-row ${role}`;
+    if (hasConflict) msgRow.classList.add('has-conflict');
 
-    const bubbleContent = document.createElement('div');
-    bubbleContent.className = 'msg-bubble-content';
+    const metaSpan = document.createElement('span');
+    metaSpan.className = 'msg-author-header';
+    metaSpan.innerText = role === 'user' ? 'You' : 'Grandma Chen Coordinator Assistant';
+
+    const bubbleContainer = document.createElement('div');
+    bubbleContainer.className = 'msg-bubble-container';
 
     if (role === 'assistant') {
         let innerHtml = '';
         if (hasConflict) {
-            innerHtml += '<div class="conflict-tag">⚠️ Discrepancy / Mismatch Flagged</div>';
+            innerHtml += '<div class="conflict-flag-badge"><svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> <span>Discrepancy / Mismatch Flagged</span></div>';
         }
         if (window.marked && typeof marked.parse === 'function') {
             innerHtml += marked.parse(content);
         } else {
             innerHtml += escapeHtml(content);
         }
-        bubbleContent.innerHTML = innerHtml;
+        bubbleContainer.innerHTML = innerHtml;
     } else {
-        bubbleContent.innerText = content;
+        bubbleContainer.innerText = content;
     }
 
-    msgDiv.appendChild(senderSpan);
-    msgDiv.appendChild(bubbleContent);
+    msgRow.appendChild(metaSpan);
+    msgRow.appendChild(bubbleContainer);
 
-    // Render collapsed-by-default retrieval receipt pill if metadata exists
+    // Collapsed-by-default retrieval receipt panel
     if (role === 'assistant' && receipt) {
         const isMcp = (receipt.method_label && receipt.method_label.includes('MCP')) || receipt.cte_restructured !== undefined;
         const receiptPanel = document.createElement('details');
-        receiptPanel.className = `retrieval-receipt ${isMcp ? 'receipt-mcp' : 'receipt-sql'}`;
+        receiptPanel.className = `retrieval-receipt-box ${isMcp ? 'receipt-mcp' : 'receipt-sql'}`;
 
         let receiptHtml = `
-            <summary class="receipt-summary">
-                <span class="receipt-mode-pill ${isMcp ? 'badge-mcp' : 'badge-sql'}">
-                    ${isMcp ? '🔌 MCP Server' : '⚡ Direct SQL'}
+            <summary class="receipt-summary-bar">
+                <span class="receipt-tag ${isMcp ? 'badge-mcp' : 'badge-sql'}">
+                    ${isMcp ? 'MCP Server' : 'Direct SQL'}
                 </span>
-                <span class="receipt-summary-text">How this was retrieved</span>
-                <span class="receipt-latency-pill">${receipt.latency_ms} ms</span>
-                <span class="receipt-chevron" aria-hidden="true">▼</span>
+                <span class="receipt-title">Retrieval Receipt & Verification</span>
+                <span class="receipt-ms-badge">${receipt.latency_ms} ms</span>
+                <span class="receipt-arrow-icon" aria-hidden="true">▼</span>
             </summary>
-            <div class="receipt-body">
-                <div class="receipt-field">
-                    <span class="receipt-label">Method:</span>
-                    <span class="receipt-data">${escapeHtml(receipt.method_label)}</span>
+            <div class="receipt-details-body">
+                <div class="receipt-info-row">
+                    <span class="receipt-k-label">Method:</span>
+                    <span class="receipt-v-value">${escapeHtml(receipt.method_label)}</span>
                 </div>
-                <div class="receipt-field">
-                    <span class="receipt-label">Mechanism:</span>
-                    <span class="receipt-data">${escapeHtml(receipt.description)}</span>
+                <div class="receipt-info-row">
+                    <span class="receipt-k-label">Mechanism:</span>
+                    <span class="receipt-v-value">${escapeHtml(receipt.description)}</span>
                 </div>
-                <div class="receipt-field">
-                    <span class="receipt-label">Measured RTT:</span>
-                    <span class="receipt-data">${receipt.latency_ms} ms</span>
+                <div class="receipt-info-row">
+                    <span class="receipt-k-label">Measured Latency:</span>
+                    <span class="receipt-v-value">${receipt.latency_ms} ms</span>
                 </div>
         `;
 
         if (receipt.cte_restructured !== undefined) {
             receiptHtml += `
-                <div class="receipt-field">
-                    <span class="receipt-label">16KB Limit CTE Restructuring:</span>
-                    <span class="receipt-data cte-tag">${receipt.cte_restructured ? 'Applied (WITH qv AS vector CTE)' : 'Not Required'}</span>
+                <div class="receipt-info-row">
+                    <span class="receipt-k-label">16KB Limit CTE Query:</span>
+                    <span class="receipt-v-value cte-highlight">${receipt.cte_restructured ? 'Applied (WITH qv AS vector CTE)' : 'Not Required'}</span>
                 </div>
             `;
         }
 
         receiptHtml += `</div>`;
         receiptPanel.innerHTML = receiptHtml;
-        msgDiv.appendChild(receiptPanel);
+        msgRow.appendChild(receiptPanel);
     }
 
-    if (CHAT_HISTORY) {
-        CHAT_HISTORY.appendChild(msgDiv);
-        scrollToBottom();
-    }
+    targetContainer.appendChild(msgRow);
+    scrollToBottom();
 
-    return msgDiv;
+    return msgRow;
 }
 
 async function sendChatMessage(question) {
     if (!question) return;
 
-    // Ensure chat view is visible
     if (currentActiveTab !== 'chat') {
         switchTab('chat');
     }
@@ -282,13 +330,11 @@ async function sendChatMessage(question) {
         CHAT_SEND_BTN.disabled = true;
     }
 
-    // Disable chips during request
-    const chips = document.querySelectorAll('.prompt-chip');
+    const chips = document.querySelectorAll('.preset-q-chip');
     chips.forEach(c => c.disabled = true);
 
     showLoadingIndicator(currentRetrievalMode);
 
-    // Trigger prominent full-width warm-up banner after 3.0 seconds
     if (warmUpTimer) clearTimeout(warmUpTimer);
     if (CHAT_WARMUP_BANNER) {
         CHAT_WARMUP_BANNER.classList.remove('visible');
@@ -300,17 +346,17 @@ async function sendChatMessage(question) {
         }
     }, 3000);
 
-    // Temporary typing indicator
     const typingMsg = document.createElement('div');
-    typingMsg.className = 'chat-message assistant';
+    typingMsg.className = 'chat-message-row assistant';
     typingMsg.innerHTML = `
-        <span class="msg-sender">👵 Coordinator Assistant</span>
-        <div class="msg-bubble-content" style="color: var(--color-text-secondary); font-style: italic;">
+        <span class="msg-author-header">Grandma Chen Coordinator Assistant</span>
+        <div class="msg-bubble-container" style="color: var(--color-text-secondary); font-style: italic;">
             Synthesizing answer via ${currentRetrievalMode === 'mcp' ? 'Cloud MCP Server' : 'Direct SQL'}...
         </div>
     `;
-    if (CHAT_HISTORY) {
-        CHAT_HISTORY.appendChild(typingMsg);
+    const targetContainer = CHAT_MESSAGES_CONTAINER || CHAT_HISTORY;
+    if (targetContainer) {
+        targetContainer.appendChild(typingMsg);
         scrollToBottom();
     }
 
@@ -331,8 +377,8 @@ async function sendChatMessage(question) {
             }
         }
 
-        if (typingMsg.parentNode && CHAT_HISTORY) {
-            CHAT_HISTORY.removeChild(typingMsg);
+        if (typingMsg.parentNode && targetContainer) {
+            targetContainer.removeChild(typingMsg);
         }
 
         if (!res.ok || !data) {
@@ -346,8 +392,8 @@ async function sendChatMessage(question) {
         appendMessage('assistant', data.answer, hasConflict, data.retrieval_receipt);
 
     } catch (err) {
-        if (typingMsg.parentNode && CHAT_HISTORY) {
-            CHAT_HISTORY.removeChild(typingMsg);
+        if (typingMsg.parentNode && targetContainer) {
+            targetContainer.removeChild(typingMsg);
         }
         let errorDisplay = (err && err.message) ? err.message : 'Something went wrong — please try again.';
         if (errorDisplay.includes('Unexpected token') || errorDisplay.includes('JSON')) {
@@ -398,7 +444,10 @@ if (CHAT_FORM) {
 async function runLiveSimulation() {
     if (!SIMULATE_BTN) return;
     SIMULATE_BTN.disabled = true;
-    SIMULATE_BTN.innerHTML = '<span aria-hidden="true">⏳</span> Simulating Activity...';
+    SIMULATE_BTN.innerHTML = `
+        <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Simulating...</span>
+    `;
 
     try {
         const res = await fetch('/api/simulate', { method: 'POST' });
@@ -419,8 +468,11 @@ async function runLiveSimulation() {
         // Refresh notes feed immediately
         await fetchNotes(true);
 
-        // Append simulation notification message to chat history
-        appendMessage('assistant', `⚡ **Live activity batch simulated successfully!**\n\nInserted 4 new caregiver notes into Grandma Chen's memory record, including an updated care plan order from Dr. Evelyn Vance and an administration log from Caregiver Mark.\n\n*Try asking me:* **"Was there any blood pressure medication discrepancy today?"**`);
+        if (currentActiveTab !== 'chat') {
+            switchTab('chat');
+        }
+
+        appendMessage('assistant', `**Live activity batch simulated successfully!**\n\nInserted 4 new caregiver notes into Grandma Chen's memory record, including an updated care plan order from Dr. Evelyn Vance and an administration log from Caregiver Mark.\n\n*Try asking me:* **"Was there any blood pressure medication discrepancy today?"**`);
 
     } catch (err) {
         let errorDisplay = (err && err.message) ? err.message : 'Simulation failed — please try again.';
@@ -430,7 +482,10 @@ async function runLiveSimulation() {
         alert(`Simulation Error: ${errorDisplay}`);
     } finally {
         SIMULATE_BTN.disabled = false;
-        SIMULATE_BTN.innerHTML = '<span aria-hidden="true">⚡</span> Simulate Live Activity';
+        SIMULATE_BTN.innerHTML = `
+            <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Simulate Activity</span>
+        `;
     }
 }
 
@@ -442,7 +497,7 @@ function selectNoteCategory(type) {
     if (TYPE_SELECT) {
         TYPE_SELECT.value = type;
     }
-    const buttons = document.querySelectorAll('.category-chip-btn');
+    const buttons = document.querySelectorAll('.cat-chip-btn');
     buttons.forEach(btn => {
         const isMatch = btn.getAttribute('data-type') === type;
         btn.classList.toggle('active', isMatch);
@@ -523,7 +578,7 @@ if (NOTE_FORM) {
             NOTE_BTN.innerHTML = '<span>Saving Caregiver Note...</span>';
         }
         if (NOTE_STATUS) {
-            NOTE_STATUS.className = 'toast-notification';
+            NOTE_STATUS.className = 'toast-status-box';
             NOTE_STATUS.innerText = '';
         }
 
@@ -548,8 +603,11 @@ if (NOTE_FORM) {
             }
 
             if (NOTE_STATUS) {
-                NOTE_STATUS.innerText = 'Caregiver note successfully saved.';
-                NOTE_STATUS.className = 'toast-notification success';
+                NOTE_STATUS.innerHTML = `
+                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span>Caregiver note successfully saved to distributed memory record.</span>
+                `;
+                NOTE_STATUS.className = 'toast-status-box success';
             }
 
             if (CONTENT_INPUT) {
@@ -570,8 +628,11 @@ if (NOTE_FORM) {
                 errorDisplay = 'Failed to add note — please try again.';
             }
             if (NOTE_STATUS) {
-                NOTE_STATUS.innerText = `Error: ${errorDisplay}`;
-                NOTE_STATUS.className = 'toast-notification error';
+                NOTE_STATUS.innerHTML = `
+                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>Error: ${errorDisplay}</span>
+                `;
+                NOTE_STATUS.className = 'toast-status-box error';
             }
         } finally {
             if (NOTE_BTN) {
@@ -617,7 +678,7 @@ async function fetchNotes(highlightNewest = false) {
 function renderNotes(notes, highlightNewest = false) {
     if (!NOTES_LIST) return;
     if (notes.length === 0) {
-        NOTES_LIST.innerHTML = '<div class="empty-feed-placeholder">No caregiver notes recorded yet.</div>';
+        NOTES_LIST.innerHTML = '<div class="empty-stream-text">No caregiver notes recorded yet.</div>';
         return;
     }
 
@@ -629,16 +690,16 @@ function renderNotes(notes, highlightNewest = false) {
         const shouldHighlight = highlightNewest && index === 0;
 
         return `
-            <article class="memory-feed-card ${shouldHighlight ? 'highlight-pulse' : ''}">
-                <div class="feed-card-header">
-                    <div class="feed-actor">
-                        <div class="avatar-circle" aria-hidden="true">${initial}</div>
-                        <span class="actor-name">${escapeHtml(note.caregiver_name)}</span>
-                        <span class="feed-timestamp">• ${escapeHtml(ts)}</span>
+            <article class="stream-note-card ${shouldHighlight ? 'pulse-new-note' : ''}">
+                <div class="card-meta-header">
+                    <div class="card-caregiver-info">
+                        <div class="caregiver-initial-circle" aria-hidden="true">${initial}</div>
+                        <span class="caregiver-name-text">${escapeHtml(note.caregiver_name)}</span>
+                        <span class="card-timestamp-text">• ${escapeHtml(ts)}</span>
                     </div>
-                    <span class="note-badge ${badgeClass}">${escapeHtml(type)}</span>
+                    <span class="note-category-tag ${badgeClass}">${escapeHtml(type)}</span>
                 </div>
-                <div class="feed-card-content">${escapeHtml(note.content)}</div>
+                <div class="card-note-body">${escapeHtml(note.content)}</div>
             </article>
         `;
     }).join('');
@@ -651,6 +712,6 @@ function escapeHtml(str) {
     });
 }
 
-// Initial fetch and 4s polling interval
+// Initial fetch and 4s polling
 fetchNotes();
 setInterval(fetchNotes, 4000);

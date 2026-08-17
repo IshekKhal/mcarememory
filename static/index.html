@@ -4,71 +4,192 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grandma Chen's Care Coordinator</title>
+    <!-- Modern Typography: Inter + Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Marked.js Markdown Renderer -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* Design Tokens (Grandma Chen Care Coordinator Design System v2) */
+        /* ==========================================================================
+           MODERN INSTAGRAM-STYLE DESIGN TOKENS (Light + Dark Mode Adaptive)
+           ========================================================================== */
         :root {
-            /* Surfaces */
+            /* Light Theme */
+            --color-bg-app: #ffffff;
             --color-surface-base: #ffffff;
-            --color-surface-muted: #f7f8fa;
-            --color-surface-raised: #ffffff;
-            --color-surface-strong: #eef1f5;
+            --color-surface-muted: #f8fafc;
+            --color-surface-sidebar: #ffffff;
+            --color-surface-card: #ffffff;
+            --color-surface-input: #f1f5f9;
+            --color-surface-bubble-assistant: #f1f5f9;
+            --color-surface-hover: #f1f5f9;
 
-            /* Borders */
-            --color-border-default: #e2e5ea;
-            --color-border-strong: #c7cdd6;
+            --color-border-default: #e2e8f0;
+            --color-border-subtle: #f1f5f9;
+            --color-border-strong: #cbd5e1;
 
-            /* Typography Colors */
-            --color-text-primary: #1a1d23;
-            --color-text-secondary: #5b6270;
-            --color-text-tertiary: #8a919e;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #475569;
+            --color-text-tertiary: #94a3b8;
             --color-text-inverse: #ffffff;
 
-            /* Accents */
-            --color-accent-primary: #3b6fe0;
-            --color-accent-primary-hover: #2d5bc7;
-            --color-accent-secondary: #9b4de0;
-            --color-accent-secondary-hover: #843ac9;
-            --color-accent-success: #1f9d55;
-            --color-accent-warning: #d98e04;
-            --color-accent-danger: #dc3545;
+            --color-accent-primary: #0095f6;
+            --color-accent-primary-hover: #1877f2;
+            --color-accent-secondary: #8b5cf6;
+            --color-accent-secondary-hover: #7c3aed;
+            --color-accent-success: #10b981;
+            --color-accent-warning: #f59e0b;
+            --color-accent-danger: #ef4444;
 
-            /* Typography */
-            --font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --font-size-xs: 12px;
-            --font-size-sm: 14px;
-            --font-size-md: 16px;
-            --font-size-lg: 20px;
-            --font-size-xl: 28px;
-            --font-weight-regular: 400;
-            --font-weight-medium: 500;
-            --font-weight-bold: 700;
-            --line-height-base: 1.5;
+            --color-conflict-bg: #fffbeb;
+            --color-conflict-border: #fde68a;
+            --color-conflict-text: #b45309;
 
-            /* Spacing (8px rhythm) */
-            --space-1: 4px;
-            --space-2: 8px;
-            --space-3: 12px;
-            --space-4: 16px;
-            --space-5: 24px;
-            --space-6: 32px;
+            --color-receipt-sql-bg: #eff6ff;
+            --color-receipt-sql-border: #bfdbfe;
+            --color-receipt-sql-text: #1d4ed8;
 
-            /* Radius */
+            --color-receipt-mcp-bg: #f5f3ff;
+            --color-receipt-mcp-border: #ddd6fe;
+            --color-receipt-mcp-text: #6d28d9;
+
+            --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
             --radius-sm: 8px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
             --radius-pill: 999px;
 
-            /* Motion */
-            --motion-duration-fast: 150ms;
-            --motion-duration-base: 250ms;
-            --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --motion-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --motion-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 
-            /* Shadows */
-            --shadow-card: 0px 1px 3px rgba(16, 24, 40, 0.08);
-            --shadow-elevated: 0 4px 12px -2px rgba(16, 24, 40, 0.08), 0 2px 6px -2px rgba(16, 24, 40, 0.04);
-            --shadow-focus: 0 0 0 3px rgba(59, 111, 224, 0.25);
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Dark Theme Auto & Manual */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --color-bg-app: #000000;
+                --color-surface-base: #000000;
+                --color-surface-muted: #0a0a0a;
+                --color-surface-sidebar: #000000;
+                --color-surface-card: #121212;
+                --color-surface-input: #18181b;
+                --color-surface-bubble-assistant: #1e293b;
+                --color-surface-hover: #1f2937;
+
+                --color-border-default: #262626;
+                --color-border-subtle: #1a1a1a;
+                --color-border-strong: #3f3f46;
+
+                --color-text-primary: #f8fafc;
+                --color-text-secondary: #94a3b8;
+                --color-text-tertiary: #64748b;
+                --color-text-inverse: #ffffff;
+
+                --color-accent-primary: #0095f6;
+                --color-accent-primary-hover: #38bdf8;
+                --color-accent-secondary: #a78bfa;
+                --color-accent-secondary-hover: #c4b5fd;
+                --color-accent-success: #10b981;
+                --color-accent-warning: #fbbf24;
+                --color-accent-danger: #f87171;
+
+                --color-conflict-bg: rgba(245, 158, 11, 0.15);
+                --color-conflict-border: rgba(245, 158, 11, 0.35);
+                --color-conflict-text: #fef08a;
+
+                --color-receipt-sql-bg: rgba(0, 149, 246, 0.1);
+                --color-receipt-sql-border: rgba(0, 149, 246, 0.3);
+                --color-receipt-sql-text: #60a5fa;
+
+                --color-receipt-mcp-bg: rgba(139, 92, 246, 0.12);
+                --color-receipt-mcp-border: rgba(139, 92, 246, 0.35);
+                --color-receipt-mcp-text: #c4b5fd;
+            }
+        }
+
+        [data-theme="dark"] {
+            --color-bg-app: #000000;
+            --color-surface-base: #000000;
+            --color-surface-muted: #0a0a0a;
+            --color-surface-sidebar: #000000;
+            --color-surface-card: #121212;
+            --color-surface-input: #18181b;
+            --color-surface-bubble-assistant: #1e293b;
+            --color-surface-hover: #1f2937;
+
+            --color-border-default: #262626;
+            --color-border-subtle: #1a1a1a;
+            --color-border-strong: #3f3f46;
+
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #94a3b8;
+            --color-text-tertiary: #64748b;
+            --color-text-inverse: #ffffff;
+
+            --color-accent-primary: #0095f6;
+            --color-accent-primary-hover: #38bdf8;
+            --color-accent-secondary: #a78bfa;
+            --color-accent-secondary-hover: #c4b5fd;
+            --color-accent-success: #10b981;
+            --color-accent-warning: #fbbf24;
+            --color-accent-danger: #f87171;
+
+            --color-conflict-bg: rgba(245, 158, 11, 0.15);
+            --color-conflict-border: rgba(245, 158, 11, 0.35);
+            --color-conflict-text: #fef08a;
+
+            --color-receipt-sql-bg: rgba(0, 149, 246, 0.1);
+            --color-receipt-sql-border: rgba(0, 149, 246, 0.3);
+            --color-receipt-sql-text: #60a5fa;
+
+            --color-receipt-mcp-bg: rgba(139, 92, 246, 0.12);
+            --color-receipt-mcp-border: rgba(139, 92, 246, 0.35);
+            --color-receipt-mcp-text: #c4b5fd;
+        }
+
+        [data-theme="light"] {
+            --color-bg-app: #ffffff;
+            --color-surface-base: #ffffff;
+            --color-surface-muted: #f8fafc;
+            --color-surface-sidebar: #ffffff;
+            --color-surface-card: #ffffff;
+            --color-surface-input: #f1f5f9;
+            --color-surface-bubble-assistant: #f1f5f9;
+            --color-surface-hover: #f1f5f9;
+
+            --color-border-default: #e2e5ea;
+            --color-border-subtle: #f1f5f9;
+            --color-border-strong: #cbd5e1;
+
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #475569;
+            --color-text-tertiary: #94a3b8;
+            --color-text-inverse: #ffffff;
+
+            --color-accent-primary: #0095f6;
+            --color-accent-primary-hover: #1877f2;
+            --color-accent-secondary: #8b5cf6;
+            --color-accent-secondary-hover: #7c3aed;
+            --color-accent-success: #10b981;
+            --color-accent-warning: #f59e0b;
+            --color-accent-danger: #ef4444;
+
+            --color-conflict-bg: #fffbeb;
+            --color-conflict-border: #fde68a;
+            --color-conflict-text: #b45309;
+
+            --color-receipt-sql-bg: #eff6ff;
+            --color-receipt-sql-border: #bfdbfe;
+            --color-receipt-sql-text: #1d4ed8;
+
+            --color-receipt-mcp-bg: #f5f3ff;
+            --color-receipt-mcp-border: #ddd6fe;
+            --color-receipt-mcp-text: #6d28d9;
         }
 
         /* Base Reset */
@@ -78,19 +199,33 @@
             padding: 0;
         }
 
-        body {
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             font-family: var(--font-family);
-            background-color: var(--color-surface-muted);
+            background-color: var(--color-bg-app);
             color: var(--color-text-primary);
-            line-height: var(--line-height-base);
-            font-size: var(--font-size-sm);
+            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* Focus-visible global standard */
+        /* Subtle modern scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.25);
+            border-radius: var(--radius-pill);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.45);
+        }
+
         *:focus {
             outline: none;
         }
@@ -98,754 +233,774 @@
         input:focus-visible,
         textarea:focus-visible,
         select:focus-visible,
-        summary:focus-visible,
         [tabindex]:focus-visible {
             outline: 2px solid var(--color-accent-primary);
             outline-offset: 2px;
         }
 
-        .container {
-            width: 100%;
-            max-width: 1160px;
-            margin: 0 auto;
-            padding: var(--space-4) var(--space-4) var(--space-6);
-            flex: 1;
+        /* SVGs */
+        .icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+        .icon-svg-sm {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ==========================================================================
+           FULL SCREEN APP LAYOUT (Instagram Desktop Shell)
+           ========================================================================== */
+        .app-shell {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--color-bg-app);
+        }
+
+        /* Left Navigation Sidebar */
+        .sidebar {
+            width: 260px;
+            height: 100%;
+            background-color: var(--color-surface-sidebar);
+            border-right: 1px solid var(--color-border-default);
             display: flex;
             flex-direction: column;
-        }
-
-        /* Header Bar */
-        .app-header {
-            display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding-bottom: var(--space-4);
-            margin-bottom: var(--space-4);
-            border-bottom: 1px solid var(--color-border-default);
-            flex-wrap: wrap;
-            gap: var(--space-3);
+            padding: 20px 14px;
+            flex-shrink: 0;
+            z-index: 10;
         }
 
-        .header-brand {
+        .sidebar-brand {
             display: flex;
             align-items: center;
-            gap: var(--space-3);
+            gap: 12px;
+            padding: 6px 12px 18px;
+            border-bottom: 1px solid var(--color-border-subtle);
+            margin-bottom: 12px;
         }
 
-        .brand-icon {
+        .brand-avatar-glow {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--color-accent-primary), #1e4bb5);
-            color: var(--color-text-inverse);
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0095f6 0%, #8b5cf6 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            box-shadow: var(--shadow-card);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 149, 246, 0.25);
             flex-shrink: 0;
         }
 
-        .brand-text h1 {
-            font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-bold);
+        .brand-text-block {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .brand-main-title {
+            font-size: 15px;
+            font-weight: 800;
             color: var(--color-text-primary);
-            letter-spacing: -0.01em;
-            line-height: 1.2;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
         }
 
-        .brand-text p {
-            font-size: var(--font-size-xs);
-            color: var(--color-text-secondary);
-            margin-top: 2px;
+        .brand-sub-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
-        .header-controls {
+        /* Sidebar Nav Links */
+        .sidebar-nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar-nav-btn {
             display: flex;
             align-items: center;
-            gap: var(--space-2);
-            flex-wrap: wrap;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background-color: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            padding: 6px 12px;
+            justify-content: space-between;
+            padding: 12px 14px;
             border-radius: var(--radius-pill);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            color: var(--color-accent-success);
-            user-select: none;
+            background: transparent;
+            border: none;
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--motion-fast);
+            width: 100%;
+            text-align: left;
         }
 
-        .pulse-dot {
+        .sidebar-nav-btn:hover:not(.active) {
+            background-color: var(--color-surface-hover);
+            color: var(--color-text-primary);
+        }
+
+        .sidebar-nav-btn.active {
+            background-color: var(--color-surface-hover);
+            color: var(--color-accent-primary);
+            font-weight: 700;
+        }
+
+        .nav-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-badge-pill {
+            font-size: 11px;
+            font-weight: 700;
+            background-color: var(--color-accent-primary);
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+        }
+
+        /* Sidebar Bottom Panel */
+        .sidebar-bottom-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 14px;
+            border-top: 1px solid var(--color-border-subtle);
+        }
+
+        .btn-sidebar-tool {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            background-color: var(--color-surface-input);
+            border: 1px solid var(--color-border-default);
+            color: var(--color-text-primary);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--motion-fast);
+            width: 100%;
+        }
+
+        .btn-sidebar-tool:hover {
+            background-color: var(--color-surface-hover);
+            border-color: var(--color-border-strong);
+        }
+
+        .btn-sidebar-tool:active {
+            transform: scale(0.98);
+        }
+
+        .btn-sidebar-tool.btn-sim-action {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(0, 149, 246, 0.15));
+            border-color: rgba(139, 92, 246, 0.3);
+            color: var(--color-accent-secondary);
+        }
+
+        .btn-sidebar-tool.btn-sim-action:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(0, 149, 246, 0.25));
+        }
+
+        .sidebar-system-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-tertiary);
+        }
+
+        .status-dot-live {
             width: 8px;
             height: 8px;
             background-color: var(--color-accent-success);
             border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 0 3px rgba(31, 157, 85, 0.2);
-            animation: livePulse 2s infinite;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            animation: pulseLive 2s infinite;
         }
 
-        @keyframes livePulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(31, 157, 85, 0.4); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(31, 157, 85, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(31, 157, 85, 0); }
+        @keyframes pulseLive {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        .btn-header-action {
+        /* ==========================================================================
+           MAIN VIEW CANVAS (Spans Full Available Width & Height)
+           ========================================================================== */
+        .main-canvas {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--color-bg-app);
+            position: relative;
+        }
+
+        /* Top Header Bar */
+        .top-app-header {
+            height: 64px;
+            border-bottom: 1px solid var(--color-border-default);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
             background-color: var(--color-surface-base);
-            border: 1px solid var(--color-border-default);
-            color: var(--color-text-secondary);
-            padding: 8px 14px;
-            border-radius: var(--radius-pill);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            font-family: inherit;
-            cursor: pointer;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            display: inline-flex;
+            flex-shrink: 0;
+            z-index: 5;
+        }
+
+        .header-profile-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-avatar-ring {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0095f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-meta-wrap h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            line-height: 1.2;
+        }
+
+        .header-meta-wrap .meta-subtitle {
+            font-size: 12px;
+            color: var(--color-accent-success);
+            font-weight: 600;
+            display: flex;
             align-items: center;
             gap: 6px;
-            min-height: 36px;
         }
 
-        .btn-header-action:hover {
-            background-color: var(--color-surface-strong);
-            color: var(--color-text-primary);
-            border-color: var(--color-border-strong);
-        }
-
-        .btn-header-action:active {
-            transform: translateY(1px);
-        }
-
-        .btn-header-action:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .btn-simulate-action {
-            background-color: #faf5ff;
-            border-color: #e9d5ff;
-            color: var(--color-accent-secondary);
-            font-weight: var(--font-weight-bold);
-        }
-
-        .btn-simulate-action:hover {
-            background-color: #f3e8ff;
-            border-color: #d8b4fe;
-            color: #7e22ce;
-        }
-
-        /* Dev Drawer */
-        .dev-drawer {
-            display: none;
-            background: #1e293b;
-            color: #f8fafc;
-            border-radius: var(--radius-sm);
-            padding: var(--space-3) var(--space-4);
-            margin-bottom: var(--space-4);
-            font-size: var(--font-size-xs);
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        }
-
-        .dev-drawer.open {
-            display: block;
-        }
-
-        .dev-drawer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: var(--space-3);
-        }
-
-        .dev-drawer span {
-            color: var(--color-text-tertiary);
-        }
-
-        .dev-drawer strong {
-            color: #38bdf8;
-            font-weight: var(--font-weight-bold);
-        }
-
-        /* Top-Level Navigation Tabs (Instagram Pill Style, Sticky) */
-        .nav-tab-container {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background-color: var(--color-surface-muted);
-            padding: var(--space-2) 0 var(--space-4);
+        .header-actions-wrap {
             display: flex;
-            justify-content: center;
+            align-items: center;
+            gap: 12px;
         }
 
-        .nav-tabs {
+        /* Modern Mode Selector */
+        .engine-selector-capsule {
             display: inline-flex;
-            background-color: var(--color-surface-strong);
+            background-color: var(--color-surface-input);
             padding: 4px;
             border-radius: var(--radius-pill);
             border: 1px solid var(--color-border-default);
             gap: 4px;
-            box-shadow: var(--shadow-card);
         }
 
-        .nav-tab {
+        .engine-mode-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 20px;
+            gap: 6px;
+            padding: 6px 14px;
             border-radius: var(--radius-pill);
-            font-size: var(--font-size-sm);
-            font-weight: var(--font-weight-medium);
+            font-size: 12px;
+            font-weight: 600;
             font-family: inherit;
-            color: var(--color-text-secondary);
-            background: transparent;
             border: none;
+            background: transparent;
+            color: var(--color-text-secondary);
             cursor: pointer;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            min-height: 40px;
-            user-select: none;
+            transition: all var(--motion-fast);
         }
 
-        .nav-tab:hover:not(.active) {
+        .engine-mode-btn:hover:not(.active) {
             color: var(--color-text-primary);
-            background-color: rgba(255, 255, 255, 0.6);
         }
 
-        .nav-tab.active {
+        .engine-mode-btn.active#mode-btn-sql {
             background-color: var(--color-accent-primary);
-            color: var(--color-text-inverse);
-            font-weight: var(--font-weight-bold);
-            box-shadow: 0 2px 4px rgba(59, 111, 224, 0.25);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 149, 246, 0.35);
         }
 
-        .nav-badge {
-            background-color: rgba(255, 255, 255, 0.25);
-            color: inherit;
-            padding: 1px 8px;
-            border-radius: var(--radius-pill);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-bold);
+        .engine-mode-btn.active#mode-btn-mcp {
+            background-color: var(--color-accent-secondary);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.35);
         }
 
-        .nav-tab:not(.active) .nav-badge {
-            background-color: var(--color-border-strong);
+        .theme-toggle-round-btn {
+            background-color: var(--color-surface-input);
+            border: 1px solid var(--color-border-default);
             color: var(--color-text-primary);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--motion-fast);
+        }
+
+        .theme-toggle-round-btn:hover {
+            background-color: var(--color-surface-hover);
+            border-color: var(--color-border-strong);
+        }
+
+        /* Dev Diagnostic Drawer */
+        .dev-diagnostic-drawer {
+            display: none;
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 12px 28px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+            border-bottom: 1px solid var(--color-border-default);
+        }
+
+        .dev-diagnostic-drawer.open {
+            display: block;
+        }
+
+        .dev-diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .dev-diagnostic-grid span {
+            color: #94a3b8;
+        }
+
+        .dev-diagnostic-grid strong {
+            color: #38bdf8;
         }
 
         /* View Panels */
-        .tab-panel {
+        .view-content-panel {
             display: none;
-            width: 100%;
             flex: 1;
+            height: calc(100% - 64px);
+            overflow: hidden;
+            width: 100%;
         }
 
-        .tab-panel.active {
+        .view-content-panel.active {
             display: flex;
             flex-direction: column;
-            animation: fadeIn var(--motion-duration-base) var(--motion-ease);
         }
 
-        @keyframes fadeIn {
+        /* ==========================================================================
+           PAGE 1: FULL-WIDTH CHAT VIEW (Horizontal Space Optimized)
+           ========================================================================== */
+        .chat-stream-viewport {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 36px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background-color: var(--color-bg-app);
+            scroll-behavior: smooth;
+        }
+
+        /* Full Width Message Rows */
+        .chat-message-row {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            animation: fadeInMessage var(--motion-fast);
+        }
+
+        @keyframes fadeInMessage {
             from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ==========================================================================
-           PAGE 1: CHAT VIEW (Centered 720px)
-           ========================================================================== */
-        .chat-view-wrapper {
-            max-width: 720px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-height: 580px;
-        }
-
-        .chat-card {
-            background-color: var(--color-surface-raised);
-            border: 1px solid var(--color-border-default);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-card);
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .chat-card-header {
-            padding: var(--space-4) var(--space-5);
-            border-bottom: 1px solid var(--color-border-default);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--color-surface-base);
-        }
-
-        .chat-header-info h2 {
-            font-size: var(--font-size-md);
-            font-weight: var(--font-weight-bold);
-            color: var(--color-text-primary);
-        }
-
-        .chat-header-info p {
-            font-size: var(--font-size-xs);
-            color: var(--color-text-secondary);
-            margin-top: 2px;
-        }
-
-        /* Mode Selector Pill Toggle */
-        .mode-toggle-group {
-            display: inline-flex;
-            background-color: var(--color-surface-strong);
-            padding: 3px;
-            border-radius: var(--radius-pill);
-            border: 1px solid var(--color-border-default);
-            gap: 2px;
-        }
-
-        .mode-toggle-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 12px;
-            border-radius: var(--radius-pill);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            font-family: inherit;
-            border: none;
-            background: transparent;
-            color: var(--color-text-secondary);
-            cursor: pointer;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            min-height: 30px;
-        }
-
-        .mode-toggle-btn:hover:not(.active) {
-            color: var(--color-text-primary);
-        }
-
-        .mode-toggle-btn.active#mode-btn-sql {
-            background-color: var(--color-accent-primary);
-            color: var(--color-text-inverse);
-            font-weight: var(--font-weight-bold);
-            box-shadow: 0 1px 3px rgba(59, 111, 224, 0.3);
-        }
-
-        .mode-toggle-btn.active#mode-btn-mcp {
-            background-color: var(--color-accent-secondary);
-            color: var(--color-text-inverse);
-            font-weight: var(--font-weight-bold);
-            box-shadow: 0 1px 3px rgba(155, 77, 224, 0.3);
-        }
-
-        /* Chat History Feed */
-        .chat-feed {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--space-5);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-4);
-            background-color: var(--color-surface-base);
-            min-height: 380px;
-            max-height: 520px;
-        }
-
-        /* Instagram-DM Message Bubbles */
-        .chat-message {
-            display: flex;
-            flex-direction: column;
-            max-width: 82%;
-            animation: bubbleIn var(--motion-duration-fast) var(--motion-ease);
-        }
-
-        @keyframes bubbleIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-message.user {
-            align-self: flex-end;
+        .chat-message-row.user {
             align-items: flex-end;
         }
 
-        .chat-message.assistant {
-            align-self: flex-start;
+        .chat-message-row.assistant {
             align-items: flex-start;
         }
 
-        .msg-sender {
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
+        .msg-author-header {
+            font-size: 11px;
+            font-weight: 700;
             color: var(--color-text-tertiary);
             margin-bottom: 4px;
             padding: 0 4px;
         }
 
-        /* Instagram DM Bubble Shapes */
-        .msg-bubble-content {
-            padding: var(--space-3) var(--space-4);
-            font-size: var(--font-size-sm);
-            line-height: var(--line-height-base);
+        .msg-bubble-container {
+            padding: 14px 20px;
+            font-size: 14px;
+            line-height: 1.6;
             word-break: break-word;
         }
 
-        /* User Bubble: Right-aligned, primary accent background, white text, flat top-right corner */
-        .chat-message.user .msg-bubble-content {
-            background-color: var(--color-accent-primary);
-            color: var(--color-text-inverse);
-            border-radius: var(--radius-lg) 4px var(--radius-lg) var(--radius-lg);
-            box-shadow: var(--shadow-card);
-        }
-
-        /* Assistant Bubble: Left-aligned, surface-strong background, dark text, flat top-left corner */
-        .chat-message.assistant .msg-bubble-content {
-            background-color: var(--color-surface-strong);
+        /* Assistant Bubble: Expands horizontally (up to 88% width) */
+        .chat-message-row.assistant .msg-bubble-container {
+            max-width: 88%;
+            background-color: var(--color-surface-bubble-assistant);
             color: var(--color-text-primary);
             border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
-            border: 1px solid var(--color-border-default);
+            border: 1px solid var(--color-border-subtle);
+            box-shadow: var(--shadow-sm);
         }
 
-        .chat-message.assistant.has-conflict .msg-bubble-content {
-            border-color: #fed7aa;
-            background-color: #fffbeb;
+        /* User Bubble: Right-aligned pill */
+        .chat-message-row.user .msg-bubble-container {
+            max-width: 75%;
+            background-color: var(--color-accent-primary);
+            color: #ffffff;
+            border-radius: var(--radius-lg) 4px var(--radius-lg) var(--radius-lg);
+            box-shadow: 0 2px 8px rgba(0, 149, 246, 0.25);
         }
 
-        .conflict-tag {
+        .chat-message-row.assistant.has-conflict .msg-bubble-container {
+            background-color: var(--color-conflict-bg);
+            border-color: var(--color-conflict-border);
+        }
+
+        .conflict-flag-badge {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-bold);
-            color: var(--color-accent-warning);
-            background-color: #fef3c7;
-            padding: 3px 8px;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--color-conflict-text);
+            background-color: var(--color-conflict-bg);
+            border: 1px solid var(--color-conflict-border);
+            padding: 4px 10px;
             border-radius: var(--radius-sm);
-            margin-bottom: var(--space-2);
-            border: 1px solid #fde68a;
+            margin-bottom: 8px;
         }
 
-        .msg-bubble-content p {
-            margin-bottom: var(--space-2);
+        .msg-bubble-container p {
+            margin-bottom: 8px;
         }
-        .msg-bubble-content p:last-child {
+        .msg-bubble-container p:last-child {
             margin-bottom: 0;
         }
-        .msg-bubble-content ul, .msg-bubble-content ol {
-            margin-left: 20px;
-            margin-bottom: var(--space-2);
+        .msg-bubble-container ul, .msg-bubble-container ol {
+            margin-left: 22px;
+            margin-bottom: 8px;
         }
-        .msg-bubble-content li {
-            margin-bottom: 3px;
+        .msg-bubble-container li {
+            margin-bottom: 4px;
         }
 
-        /* Retrieval Receipts (Collapsible Pill Under Assistant Bubble) */
-        .retrieval-receipt {
-            margin-top: 6px;
+        /* Collapsible Retrieval Receipts */
+        .retrieval-receipt-box {
+            margin-top: 8px;
             border-radius: var(--radius-sm);
-            font-size: var(--font-size-xs);
+            font-size: 12px;
             border: 1px solid var(--color-border-default);
             background-color: var(--color-surface-base);
             overflow: hidden;
             width: 100%;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
+            max-width: 88%;
+            transition: all var(--motion-fast);
         }
 
-        .retrieval-receipt.receipt-sql {
-            border-color: #bfdbfe;
-            background-color: #f0f7ff;
+        .retrieval-receipt-box.receipt-sql {
+            border-color: var(--color-receipt-sql-border);
+            background-color: var(--color-receipt-sql-bg);
         }
 
-        .retrieval-receipt.receipt-mcp {
-            border-color: #e9d5ff;
-            background-color: #faf5ff;
+        .retrieval-receipt-box.receipt-mcp {
+            border-color: var(--color-receipt-mcp-border);
+            background-color: var(--color-receipt-mcp-bg);
         }
 
-        .receipt-summary {
+        .receipt-summary-bar {
             display: flex;
             align-items: center;
-            gap: var(--space-2);
-            padding: 7px 12px;
+            gap: 10px;
+            padding: 8px 14px;
             cursor: pointer;
             user-select: none;
-            font-weight: var(--font-weight-medium);
+            font-weight: 600;
             list-style: none;
         }
 
-        .receipt-summary::-webkit-details-marker {
+        .receipt-summary-bar::-webkit-details-marker {
             display: none;
         }
 
-        .receipt-mode-pill {
+        .receipt-tag {
             font-size: 10px;
-            font-weight: var(--font-weight-bold);
-            padding: 2px 7px;
+            font-weight: 800;
+            padding: 2px 8px;
             border-radius: var(--radius-pill);
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
 
-        .receipt-mode-pill.badge-sql {
+        .receipt-tag.badge-sql {
             background-color: #dbeafe;
             color: #1e40af;
         }
 
-        .receipt-mode-pill.badge-mcp {
-            background-color: #f3e8ff;
+        .receipt-tag.badge-mcp {
+            background-color: #ede9fe;
             color: #6b21a8;
         }
 
-        .receipt-summary-text {
+        .receipt-title {
             color: var(--color-text-secondary);
-            font-size: var(--font-size-xs);
+            font-size: 12px;
             flex: 1;
         }
 
-        .receipt-latency-pill {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-weight: var(--font-weight-bold);
+        .receipt-ms-badge {
+            font-family: var(--font-mono);
+            font-weight: 700;
             color: var(--color-text-primary);
             font-size: 11px;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 2px 6px;
+            background-color: var(--color-surface-base);
+            padding: 2px 8px;
             border-radius: 4px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--color-border-default);
         }
 
-        .receipt-chevron {
-            font-size: 9px;
+        .receipt-arrow-icon {
+            font-size: 10px;
             color: var(--color-text-tertiary);
-            transition: transform var(--motion-duration-fast) var(--motion-ease);
+            transition: transform var(--motion-fast);
         }
 
-        .retrieval-receipt[open] .receipt-chevron {
+        .retrieval-receipt-box[open] .receipt-arrow-icon {
             transform: rotate(180deg);
         }
 
-        .receipt-body {
-            padding: var(--space-3) var(--space-3);
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        .receipt-details-body {
+            padding: 12px 14px;
+            border-top: 1px solid var(--color-border-subtle);
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             background-color: var(--color-surface-base);
         }
 
-        .receipt-field {
+        .receipt-info-row {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: var(--space-3);
-            font-size: var(--font-size-xs);
+            gap: 16px;
+            font-size: 12px;
         }
 
-        .receipt-label {
+        .receipt-k-label {
             color: var(--color-text-secondary);
-            font-weight: var(--font-weight-regular);
-            min-width: 120px;
+            min-width: 140px;
+            font-weight: 500;
         }
 
-        .receipt-data {
+        .receipt-v-value {
             color: var(--color-text-primary);
-            font-weight: var(--font-weight-bold);
+            font-weight: 700;
             text-align: right;
         }
 
-        .receipt-data.cte-tag {
+        .receipt-v-value.cte-highlight {
             color: var(--color-accent-secondary);
-            background-color: #f3e8ff;
+            background-color: var(--color-receipt-mcp-bg);
             padding: 2px 6px;
             border-radius: 4px;
         }
 
-        /* Preset Chips Container */
-        .chips-bar {
-            padding: var(--space-2) var(--space-5);
-            background-color: var(--color-surface-base);
+        /* Bottom Full-Width Composer Dock */
+        .chat-composer-dock {
             border-top: 1px solid var(--color-border-default);
+            background-color: var(--color-surface-base);
+            padding: 14px 36px 18px;
             display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-2);
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+            width: 100%;
         }
 
-        .prompt-chip {
-            background-color: var(--color-surface-strong);
+        /* Preset Questions Bar */
+        .preset-questions-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+
+        .preset-questions-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .preset-q-chip {
+            background-color: var(--color-surface-input);
             color: var(--color-text-secondary);
             border: 1px solid var(--color-border-default);
             border-radius: var(--radius-pill);
-            padding: 6px 12px;
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
+            transition: all var(--motion-fast);
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .prompt-chip:hover {
-            background-color: #e2e8f0;
+        .preset-q-chip:hover {
+            background-color: var(--color-surface-hover);
             color: var(--color-text-primary);
             border-color: var(--color-border-strong);
         }
 
-        .prompt-chip:active {
+        .preset-q-chip:active {
             transform: scale(0.98);
         }
 
-        .prompt-chip:disabled {
+        .preset-q-chip:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Prominent Warm-up Banner */
+        .warmup-alert-banner {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, rgba(0, 149, 246, 0.12), rgba(139, 92, 246, 0.12));
+            border: 1px solid rgba(0, 149, 246, 0.3);
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            animation: fadeInMessage var(--motion-fast);
+        }
+
+        .warmup-alert-banner.visible {
+            display: flex;
+        }
+
+        .warmup-pulse-orb {
+            width: 10px;
+            height: 10px;
+            background-color: var(--color-accent-primary);
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 4px rgba(0, 149, 246, 0.25);
+            animation: warmPulse 1.5s infinite;
+        }
+
+        @keyframes warmPulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 149, 246, 0.5); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(0, 149, 246, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(0, 149, 246, 0); }
+        }
+
+        /* Full Width Composer Form */
+        .full-composer-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--color-surface-input);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-pill);
+            padding: 6px 8px 6px 20px;
+            transition: all var(--motion-fast);
+            width: 100%;
+        }
+
+        .full-composer-form:focus-within {
+            border-color: var(--color-accent-primary);
+            background-color: var(--color-surface-base);
+            box-shadow: 0 0 0 3px rgba(0, 149, 246, 0.15);
+        }
+
+        .composer-input-field {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--color-text-primary);
+            padding: 8px 0;
+            min-height: 40px;
+        }
+
+        .btn-composer-send {
+            background-color: var(--color-accent-primary);
+            color: #ffffff;
+            border: none;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: var(--radius-pill);
+            transition: all var(--motion-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-composer-send:hover {
+            background-color: var(--color-accent-primary-hover);
+        }
+
+        .btn-composer-send:disabled {
+            background-color: var(--color-border-strong);
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none;
         }
 
-        /* Warm-up Banner (Prominent full-width alert above composer) */
-        .warmup-banner {
+        .live-query-indicator {
             display: none;
             align-items: center;
-            gap: var(--space-3);
-            background-color: #eff6ff;
-            border-top: 1px solid #bfdbfe;
-            border-bottom: 1px solid #bfdbfe;
-            padding: 10px var(--space-5);
-            font-size: var(--font-size-xs);
-            color: #1e40af;
-            animation: slideDown var(--motion-duration-base) var(--motion-ease);
-        }
-
-        .warmup-banner.visible {
-            display: flex;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .warmup-dot {
-            width: 10px;
-            height: 10px;
-            background-color: var(--color-accent-primary);
-            border-radius: 50%;
-            display: inline-block;
-            flex-shrink: 0;
-            box-shadow: 0 0 0 3px rgba(59, 111, 224, 0.25);
-            animation: warmPulse 1.5s infinite;
-        }
-
-        @keyframes warmPulse {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(59, 111, 224, 0.5); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(59, 111, 224, 0); }
-            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(59, 111, 224, 0); }
-        }
-
-        .warmup-text {
-            font-weight: var(--font-weight-medium);
-            line-height: 1.4;
-        }
-
-        /* Composer Footer (Sticky) */
-        .chat-composer-bar {
-            padding: var(--space-4) var(--space-5);
-            background-color: var(--color-surface-base);
-            border-top: 1px solid var(--color-border-default);
-        }
-
-        .chat-form {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-        }
-
-        .chat-input-pill {
-            flex: 1;
-            padding: 12px 18px;
-            font-size: var(--font-size-sm);
-            font-family: inherit;
-            color: var(--color-text-primary);
-            background-color: var(--color-surface-strong);
-            border: 1px solid var(--color-border-default);
-            border-radius: var(--radius-pill);
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            min-height: 44px;
-        }
-
-        .chat-input-pill:hover {
-            border-color: var(--color-border-strong);
-            background-color: #e9edf3;
-        }
-
-        .chat-input-pill:focus {
-            background-color: var(--color-surface-base);
-            border-color: var(--color-accent-primary);
-            box-shadow: var(--shadow-focus);
-        }
-
-        .chat-input-pill:disabled {
-            background-color: var(--color-surface-strong);
-            color: var(--color-text-tertiary);
-            cursor: not-allowed;
-        }
-
-        .btn-send-pill {
-            padding: 10px 22px;
-            font-size: var(--font-size-sm);
-            font-weight: var(--font-weight-bold);
-            font-family: inherit;
-            color: var(--color-text-inverse);
-            background-color: var(--color-accent-primary);
-            border: none;
-            border-radius: var(--radius-pill);
-            cursor: pointer;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            white-space: nowrap;
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            box-shadow: var(--shadow-card);
-        }
-
-        .btn-send-pill:hover {
-            background-color: var(--color-accent-primary-hover);
-        }
-
-        .btn-send-pill:active {
-            transform: scale(0.98);
-        }
-
-        .btn-send-pill:disabled {
-            background-color: var(--color-border-strong);
-            color: var(--color-surface-base);
-            cursor: not-allowed;
-            box-shadow: none;
-            pointer-events: none;
-        }
-
-        .chat-query-indicator {
-            display: none;
-            align-items: center;
-            gap: var(--space-2);
-            font-size: var(--font-size-xs);
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
             color: var(--color-text-secondary);
-            margin-top: var(--space-2);
-            padding-left: var(--space-2);
+            padding-left: 4px;
         }
 
-        .chat-query-indicator.visible {
+        .live-query-indicator.visible {
             display: flex;
         }
 
-        .indicator-spinner {
+        .query-spinner-ring {
             width: 14px;
             height: 14px;
             border: 2px solid var(--color-border-default);
@@ -859,574 +1014,634 @@
         }
 
         /* ==========================================================================
-           PAGE 2: CARE LOG VIEW (Two Columns Desktop, Responsive Stack Mobile)
+           PAGE 2: BALANCED CARE LOG DASHBOARD (50/50 Equal Columns)
            ========================================================================== */
-        .carelog-grid {
+        .carelog-dashboard-grid {
+            flex: 1;
+            height: 100%;
             display: grid;
-            grid-template-columns: 1fr 1.15fr;
-            gap: var(--space-5);
-            align-items: flex-start;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            background-color: var(--color-bg-app);
         }
 
         @media (max-width: 960px) {
-            .carelog-grid {
+            .carelog-dashboard-grid {
                 grid-template-columns: 1fr;
-                gap: var(--space-4);
+                overflow-y: auto;
             }
         }
 
-        .card-surface {
-            background-color: var(--color-surface-raised);
-            border: 1px solid var(--color-border-default);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
+        /* Left Side: Note Form */
+        .carelog-input-pane {
+            border-right: 1px solid var(--color-border-default);
+            background-color: var(--color-surface-base);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
         }
 
-        .card-inner-header {
-            padding: var(--space-4) var(--space-5);
+        .carelog-pane-title h3 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--color-text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .carelog-pane-title p {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        .form-layout-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .input-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-block label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-block label .star-req {
+            color: var(--color-accent-danger);
+        }
+
+        .input-field-styled, .textarea-field-styled {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--color-text-primary);
+            background-color: var(--color-surface-input);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-md);
+            transition: all var(--motion-fast);
+        }
+
+        .input-field-styled:focus, .textarea-field-styled:focus {
+            background-color: var(--color-surface-base);
+            border-color: var(--color-accent-primary);
+            box-shadow: 0 0 0 3px rgba(0, 149, 246, 0.15);
+        }
+
+        .textarea-field-styled {
+            resize: vertical;
+            min-height: 140px;
+            line-height: 1.6;
+        }
+
+        .input-err-msg {
+            display: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-accent-danger);
+        }
+
+        .input-err-msg.visible {
+            display: block;
+        }
+
+        /* Category Chips */
+        .category-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .category-selector-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .cat-chip-btn {
+            background-color: var(--color-surface-input);
+            border: 1px solid var(--color-border-default);
+            color: var(--color-text-secondary);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--motion-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .cat-chip-btn:hover {
+            border-color: var(--color-border-strong);
+            color: var(--color-text-primary);
+        }
+
+        .cat-chip-btn.active {
+            background-color: var(--color-accent-primary);
+            border-color: var(--color-accent-primary);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 149, 246, 0.3);
+        }
+
+        .btn-submit-care-note {
+            background-color: var(--color-accent-primary);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--motion-fast);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-submit-care-note:hover {
+            background-color: var(--color-accent-primary-hover);
+        }
+
+        .btn-submit-care-note:disabled {
+            background-color: var(--color-border-strong);
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .toast-status-box {
+            display: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-top: 8px;
+            animation: fadeInMessage var(--motion-fast);
+        }
+
+        .toast-status-box.success {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(16, 185, 129, 0.12);
+            color: var(--color-accent-success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .toast-status-box.error {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(239, 68, 68, 0.12);
+            color: var(--color-accent-danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Right Side: Live Stream */
+        .carelog-feed-pane {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--color-surface-muted);
+        }
+
+        .feed-pane-top-header {
+            padding: 20px 28px;
             border-bottom: 1px solid var(--color-border-default);
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: var(--color-surface-base);
-        }
-
-        .card-inner-header h2 {
-            font-size: var(--font-size-md);
-            font-weight: var(--font-weight-bold);
-            color: var(--color-text-primary);
-        }
-
-        .card-inner-header p {
-            font-size: var(--font-size-xs);
-            color: var(--color-text-secondary);
-            margin-top: 2px;
-        }
-
-        .card-body {
-            padding: var(--space-5);
-        }
-
-        /* Note Entry Form */
-        .note-form {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-4);
-        }
-
-        .form-field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-label {
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-bold);
-            color: var(--color-text-primary);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .form-label-required {
-            color: var(--color-accent-danger);
-        }
-
-        .input-text, .textarea-control {
-            width: 100%;
-            padding: 10px 14px;
-            font-size: var(--font-size-sm);
-            font-family: inherit;
-            color: var(--color-text-primary);
-            background-color: var(--color-surface-base);
-            border: 1px solid var(--color-border-default);
-            border-radius: var(--radius-sm);
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            min-height: 42px;
-        }
-
-        .input-text:hover, .textarea-control:hover {
-            border-color: var(--color-border-strong);
-        }
-
-        .input-text:focus, .textarea-control:focus {
-            border-color: var(--color-accent-primary);
-            box-shadow: var(--shadow-focus);
-        }
-
-        .input-text[aria-invalid="true"], .textarea-control[aria-invalid="true"] {
-            border-color: var(--color-accent-danger);
-            background-color: #fffbfb;
-        }
-
-        .textarea-control {
-            resize: vertical;
-            min-height: 100px;
-            line-height: var(--line-height-base);
-        }
-
-        .field-error-msg {
-            display: none;
-            font-size: var(--font-size-xs);
-            color: var(--color-accent-danger);
-            margin-top: 2px;
-        }
-
-        .field-error-msg.visible {
-            display: block;
-        }
-
-        /* Note Type Chip Selector */
-        .category-chips-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: var(--space-2);
-        }
-
-        @media (max-width: 480px) {
-            .category-chips-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        .category-chip-btn {
-            background-color: var(--color-surface-strong);
-            border: 1px solid var(--color-border-default);
-            color: var(--color-text-secondary);
-            border-radius: var(--radius-sm);
-            padding: 8px 10px;
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            font-family: inherit;
-            cursor: pointer;
-            text-align: center;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            min-height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-
-        .category-chip-btn:hover {
-            border-color: var(--color-border-strong);
-            color: var(--color-text-primary);
-            background-color: #e9edf3;
-        }
-
-        .category-chip-btn.active {
-            background-color: var(--color-accent-primary);
-            border-color: var(--color-accent-primary);
-            color: var(--color-text-inverse);
-            font-weight: var(--font-weight-bold);
-            box-shadow: 0 1px 3px rgba(59, 111, 224, 0.25);
-        }
-
-        .btn-submit-note {
-            background-color: var(--color-accent-primary);
-            color: var(--color-text-inverse);
-            border: none;
-            border-radius: var(--radius-sm);
-            padding: 12px 20px;
-            font-size: var(--font-size-sm);
-            font-weight: var(--font-weight-bold);
-            font-family: inherit;
-            cursor: pointer;
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: var(--shadow-card);
-            margin-top: var(--space-2);
-        }
-
-        .btn-submit-note:hover {
-            background-color: var(--color-accent-primary-hover);
-        }
-
-        .btn-submit-note:active {
-            transform: translateY(1px);
-        }
-
-        .btn-submit-note:disabled {
-            background-color: var(--color-border-strong);
-            color: var(--color-surface-base);
-            cursor: not-allowed;
-            box-shadow: none;
-            pointer-events: none;
-        }
-
-        /* Toast Notifications */
-        .toast-notification {
-            display: none;
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            padding: 10px 14px;
-            border-radius: var(--radius-sm);
-            margin-top: var(--space-3);
-            animation: fadeIn var(--motion-duration-fast) var(--motion-ease);
-        }
-
-        .toast-notification.success {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: #ecfdf5;
-            color: var(--color-accent-success);
-            border: 1px solid #a7f3d0;
-        }
-
-        .toast-notification.error {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: #fee2e2;
-            color: var(--color-accent-danger);
-            border: 1px solid #fca5a5;
-        }
-
-        /* Feed List */
-        .feed-count-pill {
-            font-size: var(--font-size-xs);
-            color: var(--color-accent-success);
-            background-color: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            padding: 3px 10px;
-            border-radius: var(--radius-pill);
-            font-weight: var(--font-weight-bold);
-        }
-
-        .memory-feed-container {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-3);
-            max-height: 600px;
-            overflow-y: auto;
-            padding: var(--space-5);
-        }
-
-        .memory-feed-card {
-            background-color: var(--color-surface-base);
-            border: 1px solid var(--color-border-default);
-            border-radius: var(--radius-sm);
-            padding: var(--space-4);
-            transition: all var(--motion-duration-fast) var(--motion-ease);
-        }
-
-        .memory-feed-card:hover {
-            border-color: var(--color-border-strong);
-            box-shadow: var(--shadow-card);
-        }
-
-        .memory-feed-card.highlight-pulse {
-            animation: cardHighlight 2s ease-out;
-        }
-
-        @keyframes cardHighlight {
-            0% { background-color: #f3e8ff; border-color: #c084fc; }
-            100% { background-color: var(--color-surface-base); border-color: var(--color-border-default); }
-        }
-
-        .feed-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--space-2);
-        }
-
-        .feed-actor {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-        }
-
-        .avatar-circle {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: var(--color-surface-strong);
-            color: var(--color-text-primary);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-bold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--color-border-default);
             flex-shrink: 0;
         }
 
-        .actor-name {
-            font-weight: var(--font-weight-bold);
-            font-size: var(--font-size-sm);
+        .feed-pane-top-header h3 {
+            font-size: 17px;
+            font-weight: 800;
             color: var(--color-text-primary);
         }
 
-        .feed-timestamp {
-            font-size: var(--font-size-xs);
-            color: var(--color-text-tertiary);
+        .feed-pane-top-header p {
+            font-size: 12px;
+            color: var(--color-text-secondary);
         }
 
-        .note-badge {
-            font-size: 10px;
-            font-weight: var(--font-weight-bold);
+        .live-count-chip {
+            font-size: 12px;
+            color: var(--color-accent-success);
+            background-color: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 12px;
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+        }
+
+        .feed-cards-scroll-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .stream-note-card {
+            background-color: var(--color-surface-card);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            transition: all var(--motion-fast);
+            animation: fadeInMessage var(--motion-fast);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stream-note-card:hover {
+            border-color: var(--color-border-strong);
+        }
+
+        .stream-note-card.pulse-new-note {
+            animation: pulseNewNote 2s ease-out;
+        }
+
+        @keyframes pulseNewNote {
+            0% { background-color: rgba(139, 92, 246, 0.2); border-color: var(--color-accent-secondary); }
+            100% { background-color: var(--color-surface-card); border-color: var(--color-border-default); }
+        }
+
+        .card-meta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .card-caregiver-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .caregiver-initial-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .caregiver-name-text {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--color-text-primary);
+        }
+
+        .card-timestamp-text {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+            margin-left: 4px;
+        }
+
+        .note-category-tag {
+            font-size: 11px;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: var(--radius-pill);
         }
 
-        .badge-medication { background-color: #dbeafe; color: #1e40af; }
-        .badge-observation { background-color: #fef3c7; color: #92400e; }
-        .badge-appointment { background-color: #f3e8ff; color: #6b21a8; }
-        .badge-resolution { background-color: #d1fae5; color: #065f46; }
-        .badge-general { background-color: #f1f5f9; color: #475569; }
+        .badge-medication { background-color: rgba(0, 149, 246, 0.15); color: #0095f6; }
+        .badge-observation { background-color: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .badge-appointment { background-color: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+        .badge-resolution { background-color: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-general { background-color: var(--color-surface-input); color: var(--color-text-secondary); }
 
-        .feed-card-content {
-            font-size: var(--font-size-sm);
+        .card-note-body {
+            font-size: 14px;
             color: var(--color-text-primary);
-            line-height: var(--line-height-base);
-            margin-left: 38px;
+            line-height: 1.6;
+            margin-left: 42px;
             word-break: break-word;
         }
 
-        .empty-feed-placeholder {
+        .empty-stream-text {
             text-align: center;
-            padding: var(--space-6) var(--space-4);
-            color: var(--color-text-secondary);
-            font-size: var(--font-size-sm);
+            padding: 48px 16px;
+            color: var(--color-text-tertiary);
+            font-size: 14px;
         }
 
-        /* Mobile Adjustments */
-        @media (max-width: 640px) {
-            .container {
-                padding: var(--space-3) var(--space-2) var(--space-4);
+        /* Mobile Breakpoint */
+        @media (max-width: 768px) {
+            .app-shell {
+                flex-direction: column-reverse;
             }
-            .app-header {
-                flex-direction: column;
-                align-items: flex-start;
+            .sidebar {
+                width: 100vw;
+                height: 60px;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-around;
+                padding: 0 16px;
+                border-right: none;
+                border-top: 1px solid var(--color-border-default);
             }
-            .header-controls {
+            .sidebar-brand, .sidebar-bottom-panel {
+                display: none;
+            }
+            .sidebar-nav-list {
+                flex-direction: row;
                 width: 100%;
-                justify-content: flex-start;
+                justify-content: space-around;
             }
-            .chat-card-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: var(--space-2);
+            .sidebar-nav-btn {
+                padding: 10px 16px;
+                justify-content: center;
             }
-            .chat-feed {
-                padding: var(--space-3);
-                max-height: 420px;
+            .sidebar-nav-btn span:last-child {
+                display: none;
             }
-            .chat-message {
+            .main-canvas {
+                height: calc(100vh - 60px);
+            }
+            .top-app-header {
+                padding: 0 16px;
+            }
+            .chat-stream-viewport {
+                padding: 16px;
+            }
+            .chat-message-row.assistant .msg-bubble-container,
+            .chat-message-row.user .msg-bubble-container {
                 max-width: 92%;
             }
-            .chat-composer-bar {
-                padding: var(--space-3);
+            .chat-composer-dock {
+                padding: 12px 16px 16px;
             }
-            .card-body {
-                padding: var(--space-4);
+            .carelog-input-pane {
+                padding: 20px;
             }
-            .memory-feed-container {
-                padding: var(--space-3);
+            .feed-cards-scroll-wrap {
+                padding: 16px;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Top App Header -->
-    <header class="app-header">
-        <div class="header-brand">
-            <div class="brand-icon" aria-hidden="true">👵</div>
-            <div class="brand-text">
-                <h1>Grandma Chen's Care Coordinator</h1>
-                <p>Shared memory hub for caregivers • Medication tracking & real-time conflict detection</p>
+<div class="app-shell">
+    <!-- =========================================================================
+         LEFT SIDEBAR (Instagram Navigation)
+         ========================================================================= -->
+    <aside class="sidebar" aria-label="Main Navigation">
+        <div>
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <div class="brand-avatar-glow" aria-hidden="true">GC</div>
+                <div class="brand-text-block">
+                    <span class="brand-main-title">Grandma Chen</span>
+                    <span class="brand-sub-title">Care Coordinator</span>
+                </div>
             </div>
+
+            <!-- Nav Links -->
+            <nav class="sidebar-nav-list" role="tablist">
+                <button type="button" role="tab" id="tab-chat" class="sidebar-nav-btn active" aria-selected="true" aria-controls="view-chat" tabindex="0" onclick="switchTab('chat')">
+                    <div class="nav-item-left">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span>Messages</span>
+                    </div>
+                </button>
+                <button type="button" role="tab" id="tab-carelog" class="sidebar-nav-btn" aria-selected="false" aria-controls="view-carelog" tabindex="-1" onclick="switchTab('carelog')">
+                    <div class="nav-item-left">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 12h6"></path><path d="M9 16h6"></path></svg>
+                        <span>Care Log</span>
+                    </div>
+                    <span class="nav-badge-pill" id="nav-note-count">0</span>
+                </button>
+            </nav>
         </div>
-        <div class="header-controls">
-            <button type="button" class="btn-header-action btn-simulate-action" id="simulate-btn" onclick="runLiveSimulation()" aria-label="Simulate live care activity batch">
-                <span aria-hidden="true">⚡</span> Simulate Live Activity
+
+        <!-- Sidebar Bottom Controls -->
+        <div class="sidebar-bottom-panel">
+            <button type="button" class="btn-sidebar-tool btn-sim-action" id="simulate-btn" onclick="runLiveSimulation()">
+                <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>Simulate Activity</span>
             </button>
-            <div class="status-badge" role="status" aria-live="polite">
-                <span class="pulse-dot" aria-hidden="true"></span>
+            <div class="sidebar-system-status">
+                <span class="status-dot-live" aria-hidden="true"></span>
                 <span>System Active</span>
             </div>
-            <button type="button" class="btn-header-action" id="dev-toggle-btn" onclick="toggleDevDrawer()" aria-expanded="false" aria-controls="dev-drawer">
-                Developer Info ⚙️
+            <button type="button" class="btn-sidebar-tool" id="dev-toggle-btn" onclick="toggleDevDrawer()" aria-expanded="false" aria-controls="dev-drawer">
+                <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Developer Info</span>
             </button>
         </div>
-    </header>
-
-    <!-- Developer Info Drawer (Collapsible) -->
-    <div class="dev-drawer" id="dev-drawer" role="region" aria-label="Developer Architecture Diagnostics">
-        <div class="dev-drawer-grid">
-            <div><span>Database Cluster:</span> <strong>CockroachDB (3-Node Distributed)</strong></div>
-            <div><span>Embedding Model:</span> <strong>SageMaker BGE-large (1024-dim)</strong></div>
-            <div><span>LLM Engine:</span> <strong>Claude Haiku 4.5</strong></div>
-            <div><span>Conversation ID:</span> <strong id="cid-display">Loading...</strong></div>
-        </div>
-    </div>
-
-    <!-- Sticky Instagram-Pill Tab Navigation -->
-    <nav class="nav-tab-container" aria-label="Main Navigation">
-        <div class="nav-tabs" role="tablist">
-            <button type="button" role="tab" id="tab-chat" class="nav-tab active" aria-selected="true" aria-controls="view-chat" tabindex="0" onclick="switchTab('chat')">
-                <span aria-hidden="true">💬</span> Chat
-            </button>
-            <button type="button" role="tab" id="tab-carelog" class="nav-tab" aria-selected="false" aria-controls="view-carelog" tabindex="-1" onclick="switchTab('carelog')">
-                <span aria-hidden="true">📋</span> Care Log <span class="nav-badge" id="nav-note-count">0</span>
-            </button>
-        </div>
-    </nav>
+    </aside>
 
     <!-- =========================================================================
-         PAGE 1: CHAT VIEW
+         RIGHT MAIN CANVAS (Full Screen Edge-to-Edge)
          ========================================================================= -->
-    <main id="view-chat" class="tab-panel active" role="tabpanel" aria-labelledby="tab-chat">
-        <div class="chat-view-wrapper">
-            <div class="chat-card">
-                <!-- Chat Header with Retrieval Mode Switch -->
-                <div class="chat-card-header">
-                    <div class="chat-header-info">
-                        <h2>Coordinator Assistant</h2>
-                        <p>Ask questions about care history, medication timing, or caregiver reports</p>
-                    </div>
-                    <div class="mode-toggle-group" role="group" aria-label="Retrieval Engine Mode">
-                        <button type="button" class="mode-toggle-btn active" id="mode-btn-sql" onclick="setRetrievalMode('sql')" aria-pressed="true">
-                            <span aria-hidden="true">⚡</span> Direct SQL
-                        </button>
-                        <button type="button" class="mode-toggle-btn" id="mode-btn-mcp" onclick="setRetrievalMode('mcp')" aria-pressed="false">
-                            <span aria-hidden="true">🔌</span> MCP Server
-                        </button>
-                    </div>
+    <main class="main-canvas">
+        <!-- Top App Bar -->
+        <header class="top-app-header">
+            <div class="header-profile-wrap">
+                <div class="header-avatar-ring" aria-hidden="true">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <div class="header-meta-wrap">
+                    <h2 id="view-title">Coordinator Assistant</h2>
+                    <span class="meta-subtitle">
+                        <span class="status-dot-live" style="width:6px; height:6px;"></span> Active memory sync
+                    </span>
+                </div>
+            </div>
+
+            <div class="header-actions-wrap">
+                <!-- Retrieval Engine Mode Switch -->
+                <div class="engine-selector-capsule" role="group" aria-label="Retrieval Engine">
+                    <button type="button" class="engine-mode-btn active" id="mode-btn-sql" onclick="setRetrievalMode('sql')" aria-pressed="true">
+                        <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                        <span>Direct SQL</span>
+                    </button>
+                    <button type="button" class="engine-mode-btn" id="mode-btn-mcp" onclick="setRetrievalMode('mcp')" aria-pressed="false">
+                        <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                        <span>MCP Server</span>
+                    </button>
                 </div>
 
-                <!-- Chat History Feed -->
-                <div class="chat-feed" id="chat-history" role="log" aria-live="polite" aria-label="Chat Message History">
+                <!-- Theme Toggle Button -->
+                <button type="button" class="theme-toggle-round-btn" id="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Light Mode" aria-label="Toggle Theme">
+                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Developer Diagnostic Drawer -->
+        <div class="dev-diagnostic-drawer" id="dev-drawer" role="region" aria-label="Developer Architecture Diagnostics">
+            <div class="dev-diagnostic-grid">
+                <div><span>Database Cluster:</span> <strong>CockroachDB (3-Node Distributed)</strong></div>
+                <div><span>Embedding Model:</span> <strong>SageMaker BGE-large (1024-dim)</strong></div>
+                <div><span>LLM Engine:</span> <strong>Claude Haiku 4.5</strong></div>
+                <div><span>Conversation ID:</span> <strong id="cid-display">Loading...</strong></div>
+            </div>
+        </div>
+
+        <!-- =====================================================================
+             VIEW 1: FULL SCREEN CHAT
+             ===================================================================== -->
+        <section id="view-chat" class="view-content-panel active" role="tabpanel" aria-labelledby="tab-chat">
+            <!-- Full Height Chat Stream -->
+            <div class="chat-stream-viewport" id="chat-history" role="log" aria-live="polite" aria-label="Conversation History">
+                <div id="chat-messages-container" style="display:flex; flex-direction:column; gap:16px; width:100%;">
                     <!-- Initial Welcome Message -->
-                    <div class="chat-message assistant">
-                        <span class="msg-sender">👵 Coordinator Assistant</span>
-                        <div class="msg-bubble-content">
-                            Hello! I am Grandma Chen's Care Coordinator Assistant. I analyze all caregiver logs, medication records, and physician care orders in real time. How can I assist you today?
+                    <div class="chat-message-row assistant">
+                        <span class="msg-author-header">Grandma Chen Coordinator Assistant</span>
+                        <div class="msg-bubble-container">
+                            Hello! I am Grandma Chen's Care Coordinator Assistant. I analyze all caregiver logs, medication records, and clinical care orders in real time. How can I help you today?
                         </div>
-                    </div>
-                </div>
-
-                <!-- Quick Question Preset Chips -->
-                <div class="chips-bar" aria-label="Suggested questions">
-                    <button type="button" class="prompt-chip" onclick="sendChipQuestion('Was her afternoon blood pressure medication given today?')">Afternoon BP Medication?</button>
-                    <button type="button" class="prompt-chip" onclick="sendChipQuestion('Was there any blood pressure medication discrepancy today?')">Check Lisinopril Conflict</button>
-                    <button type="button" class="prompt-chip" onclick="sendChipQuestion('What medication did she take today and when?')">Today's Medication Log</button>
-                    <button type="button" class="prompt-chip" onclick="sendChipQuestion('Has she seemed confused or anxious lately?')">Mood & Observations</button>
-                </div>
-
-                <!-- Prominent Warm-Up Banner (Appears at 3s request duration) -->
-                <div class="warmup-banner" id="chat-warmup-banner" role="status" aria-live="polite">
-                    <span class="warmup-dot" aria-hidden="true"></span>
-                    <span class="warmup-text">Warming up the AI models — this can take up to a minute on the first question.</span>
-                </div>
-
-                <!-- Sticky Composer -->
-                <div class="chat-composer-bar">
-                    <form id="chat-form" class="chat-form">
-                        <input type="text" id="chat-input" class="chat-input-pill" placeholder="Ask a question about Grandma Chen's care..." required autocomplete="off" aria-label="Chat question">
-                        <button type="submit" class="btn-send-pill" id="chat-send-btn">
-                            <span>Send</span> <span aria-hidden="true">↵</span>
-                        </button>
-                    </form>
-                    <div id="chat-loading-indicator" class="chat-query-indicator" role="status" aria-live="polite">
-                        <span class="indicator-spinner" aria-hidden="true"></span>
-                        <span id="chat-loading-text" class="loading-text">Querying...</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
 
-    <!-- =========================================================================
-         PAGE 2: CARE LOG VIEW
-         ========================================================================= -->
-    <section id="view-carelog" class="tab-panel" role="tabpanel" aria-labelledby="tab-carelog" hidden>
-        <div class="carelog-grid">
-            <!-- Left Column: Log Caregiver Note Form -->
-            <div class="card-surface">
-                <div class="card-inner-header">
-                    <div>
-                        <h2>Log Caregiver Note</h2>
-                        <p>Record clinical observations, vitals, or daily updates</p>
-                    </div>
+            <!-- Full-Width Bottom Composer Dock -->
+            <div class="chat-composer-dock">
+                <!-- Suggested Questions -->
+                <div class="preset-questions-bar" aria-label="Suggested questions">
+                    <button type="button" class="preset-q-chip" onclick="sendChipQuestion('Was her afternoon blood pressure medication given today?')">Afternoon BP Medication?</button>
+                    <button type="button" class="preset-q-chip" onclick="sendChipQuestion('Was there any blood pressure medication discrepancy today?')">Check Lisinopril Conflict</button>
+                    <button type="button" class="preset-q-chip" onclick="sendChipQuestion('What medication did she take today and when?')">Today's Medication Log</button>
+                    <button type="button" class="preset-q-chip" onclick="sendChipQuestion('Has she seemed confused or anxious lately?')">Mood & Observations</button>
+                    <button type="button" class="preset-q-chip" onclick="sendChipQuestion('When is her next doctor appointment scheduled?')">Next Doctor Appointment?</button>
+                    <button type="button" class="preset-q-chip" onclick="sendChipQuestion('Should her medication dosage be changed?')">Dosage Recommendation Check</button>
                 </div>
-                <div class="card-body">
-                    <form id="note-form" class="note-form" novalidate>
-                        <div class="form-field-group">
-                            <label for="caregiver-input" class="form-label">
+
+                <!-- Prominent Warm-Up Banner (triggers at 3.0s) -->
+                <div class="warmup-alert-banner" id="chat-warmup-banner" role="status" aria-live="polite">
+                    <span class="warmup-pulse-orb" aria-hidden="true"></span>
+                    <span>Warming up the AI models — this can take up to a minute on the first question.</span>
+                </div>
+
+                <!-- Full Width Composer Input -->
+                <form id="chat-form" class="full-composer-form">
+                    <input type="text" id="chat-input" class="composer-input-field" placeholder="Message Coordinator Assistant..." required autocomplete="off" aria-label="Message input">
+                    <button type="submit" class="btn-composer-send" id="chat-send-btn">
+                        <span>Send</span>
+                        <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </form>
+
+                <div id="chat-loading-indicator" class="live-query-indicator" role="status" aria-live="polite">
+                    <span class="query-spinner-ring" aria-hidden="true"></span>
+                    <span id="chat-loading-text">Querying...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             VIEW 2: BALANCED CARE LOG DASHBOARD (50/50 Equal Columns)
+             ===================================================================== -->
+        <section id="view-carelog" class="view-content-panel" role="tabpanel" aria-labelledby="tab-carelog" hidden>
+            <div class="carelog-dashboard-grid">
+                <!-- Left Pane: Log Caregiver Note Form -->
+                <div class="carelog-input-pane">
+                    <div class="carelog-pane-title">
+                        <h3>Log Caregiver Note</h3>
+                        <p>Record clinical observations, vitals, or medication updates</p>
+                    </div>
+
+                    <form id="note-form" class="form-layout-stack" novalidate>
+                        <div class="input-block">
+                            <label for="caregiver-input">
                                 <span>Caregiver Name</span>
-                                <span class="form-label-required" aria-hidden="true">*</span>
+                                <span class="star-req" aria-hidden="true">*</span>
                             </label>
-                            <input type="text" id="caregiver-input" class="input-text" placeholder="e.g. Nurse Sarah, Mark Chen" required aria-required="true">
-                            <span class="field-error-msg" id="caregiver-error">Caregiver name is required.</span>
+                            <input type="text" id="caregiver-input" class="input-field-styled" placeholder="e.g. Nurse Sarah, Mark Chen" required aria-required="true">
+                            <span class="input-err-msg" id="caregiver-error">Caregiver name is required.</span>
                         </div>
 
-                        <div class="form-field-group">
-                            <label class="form-label">
+                        <div class="input-block">
+                            <label>
                                 <span>Note Category</span>
                             </label>
-                            <!-- Hidden Select Backing Element -->
                             <input type="hidden" id="type-select" value="general">
-                            <!-- Category Chip Selection Grid -->
-                            <div class="category-chips-grid" role="radiogroup" aria-label="Note Category">
-                                <button type="button" role="radio" aria-checked="false" class="category-chip-btn" data-type="medication" onclick="selectNoteCategory('medication')">
-                                    💊 Medication
+                            <div class="category-selector-grid" role="radiogroup" aria-label="Note Category">
+                                <button type="button" role="radio" aria-checked="false" class="cat-chip-btn" data-type="medication" onclick="selectNoteCategory('medication')">
+                                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path><path d="m8.5 8.5 7 7"></path></svg>
+                                    <span>Medication</span>
                                 </button>
-                                <button type="button" role="radio" aria-checked="false" class="category-chip-btn" data-type="observation" onclick="selectNoteCategory('observation')">
-                                    🩺 Observation
+                                <button type="button" role="radio" aria-checked="false" class="cat-chip-btn" data-type="observation" onclick="selectNoteCategory('observation')">
+                                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                                    <span>Observation</span>
                                 </button>
-                                <button type="button" role="radio" aria-checked="false" class="category-chip-btn" data-type="appointment" onclick="selectNoteCategory('appointment')">
-                                    📅 Appointment
+                                <button type="button" role="radio" aria-checked="false" class="cat-chip-btn" data-type="appointment" onclick="selectNoteCategory('appointment')">
+                                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    <span>Appointment</span>
                                 </button>
-                                <button type="button" role="radio" aria-checked="true" class="category-chip-btn active" data-type="general" onclick="selectNoteCategory('general')">
-                                    📝 General
+                                <button type="button" role="radio" aria-checked="true" class="cat-chip-btn active" data-type="general" onclick="selectNoteCategory('general')">
+                                    <svg class="icon-svg icon-svg-sm" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                    <span>General</span>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="form-field-group">
-                            <label for="content-input" class="form-label">
+                        <div class="input-block">
+                            <label for="content-input">
                                 <span>Note Content</span>
-                                <span class="form-label-required" aria-hidden="true">*</span>
+                                <span class="star-req" aria-hidden="true">*</span>
                             </label>
-                            <textarea id="content-input" class="textarea-control" placeholder="Enter care observations, medication logs, or updates..." required aria-required="true"></textarea>
-                            <span class="field-error-msg" id="content-error">Note content is required.</span>
+                            <textarea id="content-input" class="textarea-field-styled" placeholder="Enter care observations, medication logs, or updates..." required aria-required="true"></textarea>
+                            <span class="input-err-msg" id="content-error">Note content is required.</span>
                         </div>
 
-                        <button type="submit" class="btn-submit-note" id="note-btn" disabled>
+                        <button type="submit" class="btn-submit-care-note" id="note-btn" disabled>
                             <span>Save Caregiver Note</span>
                         </button>
-                        <div id="note-status" class="toast-notification" role="status" aria-live="polite"></div>
+                        <div id="note-status" class="toast-status-box" role="status" aria-live="polite"></div>
                     </form>
                 </div>
-            </div>
 
-            <!-- Right Column: Live Memory Stream Feed -->
-            <div class="card-surface">
-                <div class="card-inner-header">
-                    <div>
-                        <h2>Live Memory Stream</h2>
-                        <p>Chronological feed of all recorded caregiver notes</p>
+                <!-- Right Pane: Live Memory Stream -->
+                <div class="carelog-feed-pane">
+                    <div class="feed-pane-top-header">
+                        <div>
+                            <h3>Live Memory Stream</h3>
+                            <p>Chronological feed of recorded notes</p>
+                        </div>
+                        <span class="live-count-chip" id="feed-count">0 Notes</span>
                     </div>
-                    <span class="feed-count-pill" id="feed-count">0 Notes</span>
-                </div>
-                <div class="memory-feed-container" id="notes-list" role="feed" aria-label="Caregiver notes list">
-                    <div class="empty-feed-placeholder">Loading caregiver notes...</div>
+                    <div class="feed-cards-scroll-wrap" id="notes-list" role="feed" aria-label="Caregiver notes feed">
+                        <div class="empty-stream-text">Loading caregiver notes...</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 </div>
 
 <script src="app.js"></script>
