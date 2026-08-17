@@ -17,3 +17,10 @@ active_conversation.id
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Design documentation
+design-system.md
+design_system.md
+DESIGN_SYSTEM.md
+DESIGN.md
+*design*system*.md

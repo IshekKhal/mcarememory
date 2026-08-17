@@ -560,7 +560,7 @@ python scripts/test_prompt_u.py
 - **Page 2 ("Care Log")**: Responsive two-column desktop layout (stacks on mobile <= 960px) containing the "Log Caregiver Note" form with interactive category chips (Medication, Observation, Appointment, General) and live validation, alongside the dedicated "Live Memory Stream" feed.
 - **Top Navigation Bar**: Sticky Instagram-pill tab switcher (`[ 💬 Chat ]  [ 📋 Care Log ]`) with full keyboard navigation (Left/Right Arrow keys, Home/End, Space/Enter activation, and focus rings).
 
-### 2. Design System Tokens & Instagram-DM Chat Pattern (`design-system.md`)
+### 2. Design System Tokens & Instagram-DM Chat Pattern
 - **Tokens**: Implemented complete palette (`--color-surface-base`, `--color-surface-muted`, `--color-surface-raised`, `--color-surface-strong`, `--color-accent-primary`, `--color-accent-secondary`, etc.), 8px spacing rhythm (4px to 32px), typography scale, and elevation shadows.
 - **Instagram-DM Bubbles**:
   - Assistant: Left-aligned, `color.surface.strong` (`#eef1f5`) background, `color.text.primary` (`#1a1d23`) text, `4px 24px 24px 24px` radius.
